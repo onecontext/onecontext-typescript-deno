@@ -1,0 +1,8 @@
+/dist/**
+deno.lock
+/node_modules/**
+package-lock.json
+.env
+.npmignore
+modules.xml
+.idea/**
