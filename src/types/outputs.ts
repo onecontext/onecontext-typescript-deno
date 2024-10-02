@@ -1,4 +1,4 @@
-import {z} from "zod";
+import { z } from "https://deno.land/x/zod/mod.ts";
 export const uploadParamsResponse = z.object({
   presignedUrl: z.string().url(),
   expiresAt: z.string(),
@@ -6,7 +6,7 @@ export const uploadParamsResponse = z.object({
   gcsUri: z.string(),
 });
 
-export const generatePresignedResponseSchema = z.array(uploadParamsResponse)
+export const generatePresignedResponseSchema = z.array(uploadParamsResponse);
 
 export type GeneratePresignedResponse = z.infer<
   typeof generatePresignedResponseSchema

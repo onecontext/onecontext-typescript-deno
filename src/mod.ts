@@ -1,5 +1,11 @@
-import * as uuidv4 from "jsr:@std/uuid";
+import { v4 as uuidv4 } from "https://deno.land/std/uuid/mod.ts";
 import * as path from "jsr:@std/path";
+import {
+  basename,
+  extname,
+  join,
+  relative,
+} from "https://deno.land/std/path/mod.ts";
 import * as inputTypes from "./types/inputs.ts";
 import * as outputTypes from "./types/outputs.ts";
 import { GeneratePresignedResponse } from "./types/outputs.ts";
@@ -69,26 +75,6 @@ export class OneContextClient {
   }
 
   /**
-   * Checks if the file is a ContentFile.
-   * @private
-   * @param file - The file to check.
-   * @returns True if the file is a ContentFile, false otherwise.
-   */
-  private isContentFile(file: any): file is inputTypes.ContentFile {
-    return "readable" in file && "name" in file;
-  }
-
-  /**
-   * Checks if the file is a PathFile.
-   * @private
-   * @param file - The file to check.
-   * @returns True if the file is a PathFile, false otherwise.
-   */
-  private isPathFile(file: any): file is inputTypes.PathFile {
-    return "readable" in file && "path" in file;
-  }
-
-  /**
    * Creates a new context.
    * @param args - The arguments for creating a context.
    * @returns The response from the API.
@@ -106,7 +92,7 @@ export class OneContextClient {
    * }
    */
   async createContext(args: inputTypes.ContextCreateType): Promise<Response> {
-    return this.request("context", {
+    return await this.request("context", {
       method: "POST",
       body: JSON.stringify(args),
     });
@@ -134,7 +120,7 @@ export class OneContextClient {
    * }
    */
   async deleteContext(args: inputTypes.ContextDeleteType): Promise<Response> {
-    return this.request(`context`, {
+    return await this.request(`context`, {
       method: "DELETE",
       body: JSON.stringify(args),
     });
@@ -157,7 +143,7 @@ export class OneContextClient {
    * }
    */
   async contextList(): Promise<Response> {
-    return this.request("context", {
+    return await this.request("context", {
       method: "GET",
     });
   }
@@ -191,7 +177,7 @@ export class OneContextClient {
    * }
    */
   async contextSearch(args: inputTypes.ContextSearchType): Promise<Response> {
-    return this.request("context/chunk/search", {
+    return await this.request("context/chunk/search", {
       method: "POST",
       body: JSON.stringify(args),
       headers: {
@@ -225,7 +211,7 @@ export class OneContextClient {
    * }
    */
   async contextGet(args: inputTypes.ContextGetType): Promise<Response> {
-    return this.request("context/chunk", {
+    return await this.request("context/chunk", {
       method: "POST",
       body: JSON.stringify(args),
       headers: {
@@ -259,7 +245,7 @@ export class OneContextClient {
     const renamedArgs = {
       fileId: args.fileId,
     };
-    return this.request("context/file", {
+    return await this.request("context/file", {
       method: "DELETE",
       body: JSON.stringify(renamedArgs),
     });
@@ -271,7 +257,7 @@ export class OneContextClient {
    * @returns The response from the API containing the list of files.
    */
   async listFiles(args: inputTypes.ListFilesType): Promise<Response> {
-    return this.request("context/file", {
+    return await this.request("context/file", {
       method: "POST",
       body: JSON.stringify(args),
     });
@@ -283,7 +269,7 @@ export class OneContextClient {
    * @returns A download url.
    */
   async getDownloadUrl(args: inputTypes.DownloadUrlType): Promise<Response> {
-    return this.request("context/file/download", {
+    return await this.request("context/file/presigned-download-url", {
       method: "POST",
       body: JSON.stringify(args),
     });
@@ -293,25 +279,21 @@ export class OneContextClient {
     async function* walkDirectory(
       dir: string,
     ): AsyncGenerator<{ path: string; name: string }> {
-      const entries = await fs.readdir(dir, { withFileTypes: true });
-      for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
+      for await (const entry of Deno.readDir(dir)) {
+        const fullPath = join(dir, entry.name);
+        if (entry.isDirectory) {
           yield* walkDirectory(fullPath);
-        } else if (entry.isFile()) {
-          const ext = path.extname(entry.name).toLowerCase();
+        } else if (entry.isFile) {
+          const ext = extname(entry.name).toLowerCase();
           if ([".txt", ".pdf", ".docx", ".doc"].includes(ext)) {
-            yield { path: fullPath, name: path.relative(directory, fullPath) };
+            yield { path: fullPath, name: relative(directory, fullPath) };
           }
         }
       }
     }
 
-    for await (const file of walkDirectory(directory)) {
-      yield { path: file.path, name: file.name };
-    }
+    yield* walkDirectory(directory);
   }
-
   /**
    * Uploads a directory of files to a context.
    * @param args - The arguments for uploading a directory.
@@ -416,18 +398,18 @@ export class OneContextClient {
       // only one metadataJson for all files in this upload batch
       // i.e. the type is a singular object, not an array of objects (for now)
       const metadataJson = args.metadataJson;
-      let fileContent: Buffer | Readable;
+      let fileContent: Uint8Array | ReadableStream;
       let fileName: string;
       let fileType: string;
 
       if ("path" in file) {
         // File is a PathFile
-        fileName = path.basename(file.path);
-        fileContent = await fs.readFile(file.path);
+        fileName = basename(file.path);
+        fileContent = await Deno.readFile(file.path);
         fileType = utils.getMimeType(file.path);
       } else if ("readable" in file) {
         // File is a ContentFile
-        fileName = file.name || uuidv4() as string;
+        fileName = file.name || uuidv4();
         fileContent = file.readable;
         fileType = file.type || "application/octet-stream";
       } else {
@@ -465,7 +447,7 @@ export class OneContextClient {
 
     // Step 3: Send batch process request
     if (successfulUploads.length > 0) {
-      return this.request("context/file/process-uploaded", {
+      return await this.request("context/file/process-uploaded", {
         method: "POST",
         body: JSON.stringify({
           files: successfulUploads,
@@ -508,7 +490,7 @@ export class OneContextClient {
   async setOpenAIApiKey(
     args: inputTypes.SetOpenAIApiKeyType,
   ): Promise<Response> {
-    return this.request("user/updateUserMeta", {
+    return await this.request("user/updateUserMeta", {
       method: "POST",
       body: JSON.stringify(args),
     });

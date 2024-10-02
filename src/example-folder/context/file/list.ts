@@ -1,12 +1,14 @@
-import ocClient from '../../construct.js';
+import ocClient from "../../construct.ts";
 
 try {
-  const result = await ocClient.listFiles({contextName: "ross"})
+  const result = await ocClient.listFiles({ contextName: "ross" });
   if (result.ok) {
-    await result.json().then((data: any) => console.log(`Files for context:`, data));
+    await result.json().then((data: any) =>
+      console.log(`Files for context:`, data)
+    );
   } else {
-    console.error('Error fetching context list');
+    console.error("Error fetching context list");
   }
 } catch (error) {
-  console.error('Error fetching context list:', error);
+  console.error("Error fetching context list:", error);
 }

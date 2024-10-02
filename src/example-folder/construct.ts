@@ -1,4 +1,4 @@
-import { OneContextClient } from "../index.ts";
+import { OneContextClient } from "./../mod.ts";
 import "jsr:@std/dotenv/load";
 
 const API_KEY = Deno.env.get("ONECONTEXT_API_KEY");

@@ -42,7 +42,7 @@ API_KEY=your_api_key_here
 
 ## Play around
 
-### Initialise the OneContext client 
+### Initialise the OneContext client
 
 ```zsh
 touch construct.ts
@@ -80,12 +80,12 @@ Compile that so you can import it easily for the next examples
 tsc
 ```
 
-### Create a Context 
+### Create a Context
 
 A `Context` is where you store your data. You can think of a `Context` as a "File Store", a "Knowledge Base", a "Second Brain", etc..
 
 ```ts
-import ocClient from './construct.js';
+import ocClient from './construct.ts';
 
 try {
   const result = await ocClient.createContext({contextName: "contextExample"})
@@ -99,7 +99,7 @@ try {
 }
 ```
 
-### Throw a load of files at it 
+### Throw a load of files at it
 
 Now you can enrich your context with knowledge. You can make your context an expert in anything, just add files.
 
@@ -113,7 +113,7 @@ requests with just one filepath in the array. We can process the jobs much faste
 likely to hit our rate limits.
 
 ```ts
-import ocClient from './construct.js';
+import ocClient from './construct.ts';
 
 try {
   ocClient.uploadFiles({
@@ -140,7 +140,7 @@ try {
 #### You can also add full directories of files
 
 ```ts
-import ocClient from './construct.js';
+import ocClient from './construct.ts';
 
 try {
   ocClient.uploadDirectory({
@@ -160,10 +160,10 @@ try {
 ```
 
 
-#### List the files in a particular context 
+#### List the files in a particular context
 
 ```ts
-import ocClient from './construct.js';
+import ocClient from './construct.ts';
 
 try {
   const result = await ocClient.listFiles({contextName: "contextName"})
@@ -177,10 +177,10 @@ try {
 }
 ```
 
-#### List the contexts you have 
+#### List the contexts you have
 
 ```ts
-import ocClient from './construct.js';
+import ocClient from './construct.ts';
 
 try {
   const result = await ocClient.contextList()
@@ -197,7 +197,7 @@ try {
 #### Delete any contexts you no longer wish to have
 
 ```ts
-import ocClient from './construct.js';
+import ocClient from './construct.ts';
 
 try {
   const result = await ocClient.deleteContext({contextName: 'contextExample'})
@@ -227,7 +227,7 @@ More details on the arguments for this method:
 - includeEmbedding: a Boolean value to be set to True or False depending on whether you want to do something with the embeddings for each chunk. If you want to do clustering or visualise the results in multidimensional space, choose True. If you just want fast context for your language model prompts, choose False.
 
 ```ts
-import ocClient from '../../construct.js';
+import ocClient from '../../construct.ts';
 
 try {
   const result = await ocClient.contextSearch(

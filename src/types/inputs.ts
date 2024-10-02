@@ -1,6 +1,4 @@
-import * as fs from "node:fs";
-import { Readable } from "node:stream";
-import { z } from "zod";
+import { z } from "https://deno.land/x/zod/mod.ts";
 
 /**
  * Schema for OpenAI API parameters.
@@ -39,53 +37,12 @@ export const ListFilesSchema = z.object({
 });
 
 /**
- * Schema for a file that's a readable stream
- */
-export const ContentFileSchema = z.object({
-  name: z.string().optional().transform((val, ctx) => {
-    if (val && !val.endsWith(".txt")) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "'name' must end with .txt",
-      });
-    }
-    return val;
-  }),
-  content: z.string().nullable(),
-  readable: z.instanceof(Readable).optional(),
-}).transform((data) => {
-  if (!data.readable && data.content) {
-    const readable = new Readable();
-    readable.push(data.content);
-    readable.push(null);
-    return { ...data, readable };
-  }
-  return data;
-});
-
-/**
  * Schema for a file that's a path (gets converted to a readable stream)
  */
-export const PathFileSchema = z.object({
+export const FileSchema = z.object({
   path: z.string().refine((val) => val.trim() !== "", {
     message: "Path cannot be empty",
   }),
-  readable: z.instanceof(Readable).optional(),
-}).transform((data, ctx) => {
-  if (
-    typeof data.path === "string" && data.path.trim() !== "" && !data.readable
-  ) {
-    try {
-      const readable = fs.createReadStream(data.path);
-      return { ...data, readable };
-    } catch (error) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Error creating Readable stream",
-      });
-    }
-  }
-  return data;
 });
 
 /**
@@ -172,19 +129,10 @@ export const ContextSearch = z.object({
 });
 
 /**
- * Schema for a Union type of both file types
- */
-export const FileSchema: z.ZodType = z.union([
-  ContentFileSchema,
-  PathFileSchema,
-]);
-
-/**
  * Schema for uploading files to a context
  */
 export const UploadFilesSchema = z.object({
   files: z.array(FileSchema),
-  stream: z.boolean().default(false).optional(),
   contextName: z.string().refine((val) => val.trim() !== "", {
     message: "Context name cannot be empty",
   }),
@@ -217,8 +165,7 @@ export const UploadDirectorySchema = z.object({
   }).default(600).optional(),
 });
 
-export type ContentFile = z.infer<typeof ContentFileSchema>;
-export type PathFile = z.infer<typeof PathFileSchema>;
+export type FileType = z.infer<typeof FileSchema>;
 export type ContextCreateType = z.infer<typeof ContextCreateSchema>;
 export type ContextDeleteType = z.infer<typeof ContextDeleteSchema>;
 export type ContextGetType = z.infer<typeof ContextGet>;

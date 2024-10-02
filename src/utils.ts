@@ -1,5 +1,4 @@
-import { performance } from "node:perf_hooks";
-import * as path from "https://deno.land/std/path/mod.ts";
+import * as path from "jsr:@std/path";
 
 const colors = {
   reset: "\x1b[0m",

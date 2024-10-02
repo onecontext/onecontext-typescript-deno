@@ -1,12 +1,14 @@
-import ocClient from '../construct.js';
+import ocClient from "../construct.ts";
 
 try {
-  const result = await ocClient.createContext({contextName: "livedemo"})
+  const result = await ocClient.createContext({ contextName: "deno" });
   if (result.ok) {
-    await result.json().then((data: any) => console.log('Context created:', data));
+    await result.json().then((data: any) =>
+      console.log("Context created:", data)
+    );
   } else {
-    console.error('Error creating context.');
+    console.error("Error creating context.");
   }
 } catch (error) {
-  console.error('Error creating context.', error);
+  console.error("Error creating context.", error);
 }
