@@ -1,7 +1,7 @@
 import ocClient from "../../construct.ts";
 
 try {
-  const result = await ocClient.listFiles({ contextName: "ross" });
+  const result = await ocClient.listFiles({ contextName: "deno" });
   if (result.ok) {
     await result.json().then((data: any) =>
       console.log(`Files for context:`, data)

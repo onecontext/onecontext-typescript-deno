@@ -85,16 +85,14 @@ export const ContextGet = z.object({
 
 /**
  * A Structured Output Schema for LLMs
+ * TODO: implement with the correct types based on: https://zod.dev/?id=json-type
  */
-export const jsonSchema = z.object({
-  type: z.literal("object"),
-  properties: z.record(
-    z.string(),
-    z.object({
-      type: z.any(),
-    }),
-  ),
-});
+const literalSchema = z.union([z.string(), z.number(), z.boolean(), z.null()]);
+type Literal = z.infer<typeof literalSchema>;
+type Json = Literal | { [key: string]: Json } | Json[];
+const jsonSchema: z.ZodType<Json> = z.lazy(() =>
+  z.union([literalSchema, z.array(jsonSchema), z.record(jsonSchema)])
+);
 
 export type JsonSchemaType = z.infer<typeof jsonSchema>;
 
@@ -125,7 +123,7 @@ export const ContextSearch = z.object({
     message: "rrfK must be greater than 0",
   }).default(60).optional(),
   includeEmbedding: z.boolean().default(false).optional(),
-  structuredOutputSchema: jsonSchema.optional(),
+  structuredOutputSchema: z.any().optional(),
 });
 
 /**

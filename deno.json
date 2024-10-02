@@ -1,4 +1,7 @@
 {
+  "name": "@onecontext/sdk",
+  "version": "0.1.0",
+  "exports": "./mod.ts",
   "tasks": {
     "dev": "deno run --watch main.ts"
   },
@@ -7,6 +10,7 @@
     "@std/dotenv": "jsr:@std/dotenv@^0.225.2",
     "@std/fs": "jsr:@std/fs@^1.0.4",
     "@std/path": "jsr:@std/path@^1.0.6",
+    "@stefan/zod-to-json-schema": "jsr:@stefan/zod-to-json-schema@^3.23.0",
     "zod": "npm:zod@^3.23.8"
   }
 }

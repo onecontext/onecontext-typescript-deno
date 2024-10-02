@@ -3,7 +3,7 @@ import ocClient from "../construct.ts";
 try {
   const result = await ocClient.contextGet(
     {
-      "contextName": "ross",
+      "contextName": "lots",
       "metadataFilters": {
         $and: [{ age: { $eq: 30 } }, { name: { $contains: "ross" } }],
       },

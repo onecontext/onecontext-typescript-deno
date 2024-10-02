@@ -3,7 +3,7 @@ import ocClient from "../../construct.ts";
 try {
   const result = await ocClient.deleteFile(
     {
-      fileId: "46f64b74-0bbd-4360-a77a-80a1f918abad",
+      fileId: "7294765e-1e77-4994-9b34-d87232a3cd58",
     },
   );
   if (result.ok) {
