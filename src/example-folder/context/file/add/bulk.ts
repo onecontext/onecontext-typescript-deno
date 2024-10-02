@@ -30,20 +30,11 @@ const pathArray = async (
 try {
   const directoryPath = "/Users/rossmurphy/GitHub/ctxc/context_eval/data/txt/";
   const filePathArray = await pathArray({ directoryPath, numFiles: 10 });
-  const res = await ocClient.uploadFiles({
+  await ocClient.uploadFiles({
     files: filePathArray.map((path: string) => ({ path })),
     contextName: "dummy",
-    stream: false,
     maxChunkSize: 200,
   });
-
-  if (res.ok) {
-    await res.json().then((data: any) =>
-      console.log("File(s) successfully uploaded:", data)
-    );
-  } else {
-    console.error("Error uploading files.");
-  }
 } catch (error) {
   console.error("Error uploading files:", error);
 }

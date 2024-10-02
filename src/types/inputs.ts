@@ -1,5 +1,8 @@
 import { z } from "https://deno.land/x/zod/mod.ts";
 
+export const MetadataFilters = z.record(z.string(), z.any());
+export type MetadataFilters = z.infer<typeof MetadataFilters>;
+
 /**
  * Schema for OpenAI API parameters.
  */
@@ -33,7 +36,7 @@ export const ListFilesSchema = z.object({
   skip: z.number().default(0).optional(),
   limit: z.number().default(10).optional(),
   sort: z.string().default("date_created").optional(),
-  metadataFilters: z.object({}).default({}).optional(),
+  metadataFilters: MetadataFilters.default({}).optional(),
 });
 
 /**
@@ -73,7 +76,7 @@ export const ListContext = z.object({});
  */
 export const ContextGet = z.object({
   contextName: z.string(),
-  metadataFilters: z.object({}).default({}).optional(),
+  metadataFilters: MetadataFilters.default({}).optional(),
   limit: z.union([
     z.number().refine((val) => val > 0, {
       message: "Limit must be greater than 0",
@@ -106,7 +109,7 @@ export const ContextSearch = z.object({
   }),
   contextName: z.string(),
   // TODO - add stricter type for this (it's on the backend, move it over here')
-  metadataFilters: z.object({}).default({}).optional(),
+  metadataFilters: MetadataFilters.default({}).optional(),
   topK: z.union([
     z.number().refine((val) => val > 0, {
       message: "Top k must be greater than 0",
@@ -134,7 +137,7 @@ export const UploadFilesSchema = z.object({
   contextName: z.string().refine((val) => val.trim() !== "", {
     message: "Context name cannot be empty",
   }),
-  metadataJson: z.record(z.string(), z.any()).optional(),
+  metadataJson: MetadataFilters.optional(),
   maxChunkSize: z.number().refine((val) => val > 0, {
     message: "Max chunk size must be greater than 0",
   }).default(600).optional(),
@@ -157,7 +160,7 @@ export const UploadDirectorySchema = z.object({
   contextName: z.string().refine((val) => val.trim() !== "", {
     message: "Knowledge Base name cannot be empty",
   }),
-  metadataJson: z.record(z.string(), z.any()).optional(),
+  metadataJson: MetadataFilters.optional(),
   maxChunkSize: z.number().refine((val) => val > 0, {
     message: "Max chunk size must be greater than 0",
   }).default(600).optional(),

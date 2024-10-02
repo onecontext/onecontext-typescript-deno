@@ -1,13 +1,16 @@
 import ocClient from "./../construct.ts";
-import { zodToJsonSchema } from "@stefan/zod-to-json-schema";
+import { zodToJsonSchema } from "npm:zod-to-json-schema";
 import { z } from "https://deno.land/x/zod/mod.ts";
-import { JsonSchemaType } from "../../types/inputs.ts";
 
 try {
   const candidate = z.object({
     hi: z.string().describe("a title of a 1970s rockband"),
   });
 
+  // deno-lint-ignore TS2589
+  // @ts-ignore -- type checking will throw infinite recursion error here
+  // this is because there are a LOT of types zodToJsonSchema can compose...
+  // this is ~fine...
   const jsonCandidate = zodToJsonSchema(candidate);
 
   if (!jsonCandidate) {
@@ -35,9 +38,7 @@ try {
     },
   );
   if (result.ok) {
-    await result.json().then((data: any) =>
-      console.log("Result:", data.output)
-    );
+    await result.json().then((data: any) => console.log("Result:", data));
   } else {
     console.error("Error searching context.");
   }

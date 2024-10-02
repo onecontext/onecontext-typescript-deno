@@ -1,6 +1,8 @@
 import { OneContextClient } from "./../src/mod.ts";
-import { assertEquals, assertExists } from "jsr:@std/assert";
+import { assertEquals, assertExists, assertGreater } from "jsr:@std/assert";
 import "jsr:@std/dotenv/load";
+import * as uuid from "jsr:@std/uuid";
+import type { MetadataFilters } from "../src/types/inputs.ts";
 
 const API_KEY = Deno.env.get("ONECONTEXT_API_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
@@ -19,28 +21,40 @@ const ocClient = new OneContextClient({
   baseUrl: BASE_URL,
 });
 
-async function consumeResponse(response: Response) {
+async function _consumeResponse(response: Response) {
   await response.text();
 }
 
-const testContextName1 = "deno-test-context-files";
-const testContextName2 = "deno-test-context-directory";
-const testFilesDir = "./test/files";
+const testFilesDir = "./test/files/";
 
 async function waitForProcessing(contextName: string) {
-  const maxAttempts = 6;
-  const waitTime = 20000;
+  const maxAttempts = 10;
+  const waitTime = 10000;
 
   for (let attempts = 0; attempts < maxAttempts; attempts++) {
     const listResult = await ocClient.listFiles({ contextName });
-    assertEquals(listResult.ok, true);
-    const listData = await listResult.json();
-    assertExists(listData);
 
-    if (listData.files.every((file: any) => file.status === "COMPLETED")) {
+    const files = listResult.files;
+
+    if (files.every((file: any) => file.status === "COMPLETED")) {
       return;
     }
 
+    const failedFiles = files.filter((file: any) => file.status === "FAILED");
+
+    if (failedFiles.length > 0) {
+      console.error(
+        `File processing failed for the following files in context ${contextName}:`,
+      );
+      failedFiles.forEach((file: any) => {
+        console.error(`- ${file.name}`);
+      });
+      throw new Error(
+        `File processing failed for ${failedFiles.length} file(s) in context ${contextName}`,
+      );
+    }
+
+    // Wait before next attempt
     await new Promise((resolve) => setTimeout(resolve, waitTime));
   }
 
@@ -48,7 +62,7 @@ async function waitForProcessing(contextName: string) {
 }
 
 async function performSearch(contextName: string, metadataFilters?: any) {
-  const searchResult = await ocClient.contextSearch({
+  return await ocClient.contextSearch({
     query: "test content",
     contextName,
     topK: 5,
@@ -58,75 +72,169 @@ async function performSearch(contextName: string, metadataFilters?: any) {
     includeEmbedding: false,
     metadataFilters,
   });
-  assertEquals(searchResult.ok, true);
-  const searchData = await searchResult.json();
-  console.log({ searchData });
-  assertExists(searchData);
-  assertEquals(searchData.length > 0, true);
 }
 
-async function performGetChunks(contextName: string, metadataFilters?: any) {
-  const getResult = await ocClient.contextGet({
+async function performGetChunks(
+  contextName: string,
+  metadataFilters?: MetadataFilters,
+) {
+  return await ocClient.contextGet({
     contextName,
     limit: 5,
     includeEmbedding: false,
     metadataFilters,
   });
-  assertEquals(getResult.ok, true);
-  const getData = await getResult.json();
-  console.log({ getData });
-  assertExists(getData);
-  return getData;
 }
 
-Deno.test("Context Operations", async (t) => {
-  let contextCreated1 = false;
-  let contextCreated2 = false;
+Deno.test("Upload Files Operations", async (t) => {
+  let filesContextCreated = false;
+  const filesContextName = "deno-test-context-files" + "-" +
+    String(uuid.v1.generate());
 
-  try {
-    await t.step("uploadFiles method", async () => {
-      const createResult = await ocClient.createContext({
-        contextName: testContextName1,
-      });
-      assertEquals(createResult.ok, true);
-      const createData = await createResult.json();
-      assertExists(createData);
-      contextCreated1 = true;
+  await t.step("Create Context", async () => {
+    const createResult = await ocClient.createContext({
+      contextName: filesContextName,
+    });
+    assertExists(createResult);
+    filesContextCreated = true;
+  });
 
-      const validFiles = [];
-      for await (const file of Deno.readDir(testFilesDir)) {
-        if (file.name.endsWith(".pdf") || file.name.endsWith(".docx")) {
-          validFiles.push(file);
-        }
+  await t.step("Upload Files", async () => {
+    const validFiles = [];
+    for await (const file of Deno.readDir(testFilesDir)) {
+      if (
+        file.name.endsWith(".pdf") || file.name.endsWith(".docx") ||
+        file.name.endsWith(".txt")
+      ) {
+        validFiles.push(file);
       }
-      const filePaths = validFiles.map((file) => ({
-        path: `${testFilesDir}/${file.name}`,
-      }));
+    }
+    const filePaths = validFiles.map((file) => ({
+      path: `${testFilesDir}/${file.name}`,
+    }));
 
-      const uploadResult = await ocClient.uploadFiles({
-        contextName: testContextName1,
-        stream: false,
-        files: filePaths,
-        metadataJson: {
-          "testString": "string",
-          "testArray": ["testArrayElement1", "testArrayElement2"],
-          "testInt": 123,
-          "testBool": true,
-          "testFloat": 1.4,
-        },
-        maxChunkSize: 500,
+    const uploadResult = await ocClient.uploadFiles({
+      contextName: filesContextName,
+      files: filePaths,
+      metadataJson: {
+        "testString": "string",
+        "testArray": ["testArrayElement1", "testArrayElement2"],
+        "testInt": 123,
+        "testBool": true,
+        "testFloat": 1.4,
+      },
+      maxChunkSize: 200,
+    });
+
+    assertExists(uploadResult);
+  });
+
+  await t.step("Wait for Files To Process", async () => {
+    try {
+      await waitForProcessing(filesContextName);
+    } catch (error) {
+      throw new Error(`Error waiting for files to process: ${error}`);
+    }
+  });
+
+  await t.step("Perform a vanilla search", async () => {
+    const result = await performSearch(filesContextName);
+    assertGreater(result.chunks.length, 0);
+  });
+
+  await t.step("Perform a search with metadata filters", async () => {
+    const result = await performSearch(filesContextName, {
+      $and: [{
+        "testString": { "$eq": "string" },
+      }, {
+        "testArray": { "$contains": "testArrayElement1" },
+      }, {
+        "testInt": { "$eq": 123 },
+      }, {
+        "testBool": { "$eq": true },
+      }, {
+        "testFloat": { "$eq": 1.4 },
+      }],
+    });
+    assertGreater(result.chunks.length, 0);
+  });
+
+  await t.step(
+    "Perform a Get Chunks Operation, without metadata",
+    async () => {
+      const resultsData = await performGetChunks(filesContextName);
+      assertGreater(resultsData.chunks.length, 0);
+    },
+  );
+
+  await t.step(
+    "Perform a get Chunks Operation, with metadata filters which should result in no chunks",
+    async () => {
+      const noResultsData = await performGetChunks(filesContextName, {
+        $and: [{
+          "testString": { "$eq": "notWhatWeWant" },
+        }],
       });
+      assertEquals(noResultsData.chunks.length, 0);
+    },
+  );
 
-      assertEquals(uploadResult.ok, true);
-      const uploadData = await uploadResult.json();
-      assertExists(uploadData);
+  await t.step("Clean up, delete context", async () => {
+    if (filesContextCreated) {
+      const deleteResult = await ocClient.deleteContext({
+        contextName: filesContextName,
+      });
+      assertExists(deleteResult);
+    } else return;
+  });
+});
 
-      await waitForProcessing(testContextName1);
+Deno.test("Upload Directory Operations", async (t) => {
+  let directoryContextCreated = false;
+  const directoryContextName = "deno-test-context-directory" + "-" +
+    String(uuid.v1.generate());
 
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+  await t.step("Create Context", async () => {
+    const createResult = await ocClient.createContext({
+      contextName: directoryContextName,
+    });
+    assertExists(createResult);
+    directoryContextCreated = true;
+    return;
+  });
 
-      await performSearch(testContextName1);
-      await performSearch(testContextName1, {
+  await t.step("Upload a Directory of Files", async () => {
+    const uploadResult = await ocClient.uploadDirectory({
+      directory: testFilesDir,
+      contextName: directoryContextName,
+      metadataJson: {
+        "testString": "string",
+        "testArray": ["testArrayElement1", "testArrayElement2"],
+        "testInt": 123,
+        "testBool": true,
+        "testFloat": 1.4,
+      },
+      maxChunkSize: 200,
+    });
+    assertExists(uploadResult);
+    return;
+  });
+
+  await t.step("Wait for processing of files from directory", async () => {
+    await waitForProcessing(directoryContextName);
+    return;
+  });
+
+  await t.step("Perform a vanilla search against context", async () => {
+    const result = await performSearch(directoryContextName);
+    assertGreater(result.chunks.length, 0);
+    return;
+  });
+
+  await t.step(
+    "Perform a search with metadata filters against context",
+    async () => {
+      const result = await performSearch(directoryContextName, {
         $and: [{
           "testString": { "$eq": "string" },
         }, {
@@ -139,86 +247,39 @@ Deno.test("Context Operations", async (t) => {
           "testFloat": { "$eq": 1.4 },
         }],
       });
-      await performGetChunks(testContextName1);
-      const noResultsData = await performGetChunks(testContextName1, {
+      assertGreater(result.chunks.length, 0);
+      return;
+    },
+  );
+
+  await t.step(
+    "Perform a Get Chunks Operation, without metadata",
+    async () => {
+      const result = await performGetChunks(directoryContextName);
+      assertGreater(result.chunks.length, 0);
+      return;
+    },
+  );
+
+  await t.step(
+    "Perform a Get Chunks operation, with a metadata filter which should return no chunks",
+    async () => {
+      const noResultsData = await performGetChunks(directoryContextName, {
         $and: [{
           "testString": { "$eq": "notWhatWeWant" },
         }],
       });
-      assertEquals(noResultsData.length, 0);
-    });
+      assertEquals(noResultsData.chunks.length, 0);
+      return;
+    },
+  );
 
-    await t.step("uploadDirectory method", async () => {
-      const createResult = await ocClient.createContext({
-        contextName: testContextName2,
+  await t.step("Clean up and delete", async () => {
+    if (directoryContextCreated) {
+      const deleteResult = await ocClient.deleteContext({
+        contextName: directoryContextName,
       });
-      assertEquals(createResult.ok, true);
-      const createData = await createResult.json();
-      assertExists(createData);
-      contextCreated2 = true;
-
-      const uploadResult = await ocClient.uploadDirectory({
-        contextName: testContextName2,
-        directory: testFilesDir,
-        metadataJson: {
-          "testString": "string",
-          "testArray": ["testArrayElement1", "testArrayElement2"],
-          "testInt": 123,
-          "testBool": true,
-          "testFloat": 1.4,
-        },
-        maxChunkSize: 500,
-      });
-      assertEquals(uploadResult.ok, true);
-      const uploadData = await uploadResult.json();
-      assertExists(uploadData);
-
-      await waitForProcessing(testContextName2);
-
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      await performSearch(testContextName2);
-      await performSearch(testContextName2, {
-        $and: [{
-          "testString": { "$eq": "string" },
-        }, {
-          "testArray": { "$contains": "testArrayElement1" },
-        }, {
-          "testInt": { "$eq": 123 },
-        }, {
-          "testBool": { "$eq": true },
-        }, {
-          "testFloat": { "$eq": 1.4 },
-        }],
-      });
-      await performGetChunks(testContextName2);
-      const noResultsData = await performGetChunks(testContextName2, {
-        $and: [{
-          "testString": { "$eq": "notWhatWeWant" },
-        }],
-      });
-      assertEquals(noResultsData.length, 0);
-    });
-
-    await t.step("context list method", async () => {
-      const listResult = await ocClient.contextList();
-      assertEquals(listResult.ok, true);
-      const listData = await listResult.json();
-      assertExists(listData);
-    });
-  } finally {
-    // Cleanup contexts if they were created
-    if (contextCreated1) {
-      const deleteResponse = await ocClient.deleteContext({
-        contextName: testContextName1,
-      });
-      await consumeResponse(deleteResponse);
-    }
-    if (contextCreated2) {
-      const deleteResponse = await ocClient.deleteContext({
-        contextName: testContextName2,
-      });
-      await consumeResponse(deleteResponse);
-    }
-  }
+      assertExists(deleteResult);
+    } else return;
+  });
 });

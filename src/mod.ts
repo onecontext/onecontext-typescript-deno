@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from "https://deno.land/std/uuid/mod.ts";
 import * as path from "jsr:@std/path";
 import {
   basename,
@@ -43,35 +42,27 @@ export class OneContextClient {
    * @param options - Additional options for the request.
    * @returns The response from the API.
    */
-  private async request(
+  private async request<T>(
     endpoint: string,
     options: RequestInit = {},
-  ): Promise<Response> {
-    const url = new URL(endpoint, this.baseUrl).toString();
-    // Create a new headers object
-    const headers = new Headers({ ...options.headers });
+  ): Promise<T> {
+    const response = await fetch(new URL(endpoint, this.baseUrl).toString(), {
+      ...options,
+      headers: {
+        ...options.headers,
+        "API-KEY": this.apiKey,
+        "OPENAI-API-KEY": this.openAiKey || "",
+      },
+    });
 
-    // Add the API key
-    headers.set("API-KEY", this.apiKey);
-
-    // Add the OpenAI API key if it exists
-    if (this.openAiKey) {
-      // Note, you do not have to pass in the headers each time if you do not want to!
-      // Alternatively, you can store your key with us (in an encrypted format) on our backend.
-      // Simply visit https://app.onecontext.ai/settings/account and add your key there.
-
-      // This will add a little overhead to each of your requests (as we need to fetch, and decrypt the key on each
-      // request, but, can be preferable in certain scenarios).
-      headers.set("OPENAI-API-KEY", this.openAiKey);
+    if (!response.ok) {
+      const errorBody = await response.text(); // Consume the body
+      throw new Error(
+        `HTTP error! status: ${response.status}, body: ${errorBody}`,
+      );
     }
 
-    // Create the final options object
-    const finalOptions: RequestInit = {
-      ...options,
-      headers,
-    };
-
-    return await fetch(url, finalOptions);
+    return await response.json() as T;
   }
 
   /**
@@ -82,16 +73,13 @@ export class OneContextClient {
    * try {
    *   const ocClient = new OneContextClient(BASE_URL, API_KEY);
    *   const result = await ocClient.createContext({contextName: "contextName"})
-   *   if (result.ok) {
-   *     await result.json().then((data) => console.log('Context created:', data));
-   *   } else {
-   *     console.error('Error creating context.');
-   *   }
    * } catch (error) {
    *   console.error('Error creating context.', error);
    * }
    */
-  async createContext(args: inputTypes.ContextCreateType): Promise<Response> {
+  async createContext(
+    args: inputTypes.ContextCreateType,
+  ): Promise<outputTypes.ContextCreateResponse> {
     return await this.request("context", {
       method: "POST",
       body: JSON.stringify(args),
@@ -110,16 +98,13 @@ export class OneContextClient {
    *       contextName: "contextName"
    *     }
    *   )
-   *   if (result.ok) {
-   *     await result.json().then((data) => console.log('Context deleted:', data));
-   *   } else {
-   *     console.error('Error deleting context');
-   *   }
    * } catch (error) {
    *   console.error('Error deleting context :', error);
    * }
    */
-  async deleteContext(args: inputTypes.ContextDeleteType): Promise<Response> {
+  async deleteContext(
+    args: inputTypes.ContextDeleteType,
+  ): Promise<outputTypes.FlexibleResponse> {
     return await this.request(`context`, {
       method: "DELETE",
       body: JSON.stringify(args),
@@ -133,16 +118,11 @@ export class OneContextClient {
    * try {
    *   const ocClient = new OneContextClient(BASE_URL, API_KEY);
    *   const result = await ocClient.contextList()
-   *   if (result.ok) {
-   *     await result.json().then((data) => console.log(`Contexts for your user:`, data));
-   *   } else {
-   *     console.error('Error fetching list of contexts');
-   *   }
    * } catch (error) {
    *   console.error('Error fetching list of contexts', error);
    * }
    */
-  async contextList(): Promise<Response> {
+  async contextList(): Promise<outputTypes.FlexibleResponse> {
     return await this.request("context", {
       method: "GET",
     });
@@ -167,16 +147,13 @@ export class OneContextClient {
    *       "includeEmbedding": false
    *     }
    *   )
-   *   if (result.ok) {
-   *     await result.json().then((data) => console.log('Search results:', data));
-   *   } else {
-   *     console.error('Error searching context.');
-   *   }
    * } catch (error) {
    *   console.error('Error searching context.', error);
    * }
    */
-  async contextSearch(args: inputTypes.ContextSearchType): Promise<Response> {
+  async contextSearch(
+    args: inputTypes.ContextSearchType,
+  ): Promise<outputTypes.ChunkOperationResponse> {
     return await this.request("context/chunk/search", {
       method: "POST",
       body: JSON.stringify(args),
@@ -201,16 +178,13 @@ export class OneContextClient {
    *       "includeEmbedding": false
    *     }
    *   )
-   *   if (result.ok) {
-   *     await result.json().then((data) => console.log('Filter results:', data));
-   *   } else {
-   *     console.error('Error searching context.');
-   *   }
    * } catch (error) {
    *   console.error('Error searching context.', error);
    * }
    */
-  async contextGet(args: inputTypes.ContextGetType): Promise<Response> {
+  async contextGet(
+    args: inputTypes.ContextGetType,
+  ): Promise<outputTypes.ChunkOperationResponse> {
     return await this.request("context/chunk", {
       method: "POST",
       body: JSON.stringify(args),
@@ -232,16 +206,13 @@ export class OneContextClient {
    *       "fileId": "example_file_id",
    *     }
    *   )
-   *   if (result.ok) {
-   *     await result.json().then((data) => console.log('Successfully deleted:', data));
-   *   } else {
-   *     console.error('Error deleting file.');
-   *   }
    * } catch (error) {
    *   console.error('Error deleting file.', error);
    * }
    */
-  async deleteFile(args: inputTypes.DeleteFileType): Promise<Response> {
+  async deleteFile(
+    args: inputTypes.DeleteFileType,
+  ): Promise<outputTypes.FlexibleResponse> {
     const renamedArgs = {
       fileId: args.fileId,
     };
@@ -256,7 +227,9 @@ export class OneContextClient {
    * @param args - The arguments for listing files.
    * @returns The response from the API containing the list of files.
    */
-  async listFiles(args: inputTypes.ListFilesType): Promise<Response> {
+  async listFiles(
+    args: inputTypes.ListFilesType,
+  ): Promise<outputTypes.ListFilesResponse> {
     return await this.request("context/file", {
       method: "POST",
       body: JSON.stringify(args),
@@ -268,7 +241,9 @@ export class OneContextClient {
    * @param args - The file id.
    * @returns A download url.
    */
-  async getDownloadUrl(args: inputTypes.DownloadUrlType): Promise<Response> {
+  async getDownloadUrl(
+    args: inputTypes.DownloadUrlType,
+  ): Promise<outputTypes.FlexibleResponse> {
     return await this.request("context/file/presigned-download-url", {
       method: "POST",
       body: JSON.stringify(args),
@@ -302,16 +277,10 @@ export class OneContextClient {
    * @example
    * try {
    *  const ocClient = new OneContextClient(BASE_URL, API_KEY);
-   *  ocClient.uploadDirectory({
+   *  await ocClient.uploadDirectory({
    *    directory: "/Path/to/User/Directory",
    *    contextName: "contextName",
    *    maxChunkSize: 400
-   *  }).then((res) => {
-   *    if (res.ok) {
-   *      res.json().then((data) => console.log('Directory uploaded:', data));
-   *    } else {
-   *      console.error('Error uploading directory.');
-   *    }
    *  })
    * } catch (error) {
    *  console.error('Error uploading directory:', error);
@@ -319,8 +288,8 @@ export class OneContextClient {
    */
   async uploadDirectory(
     args: inputTypes.UploadDirectoryType,
-  ): Promise<Response> {
-    const files: inputTypes.PathFile[] = [];
+  ): Promise<outputTypes.FlexibleResponse> {
+    const files: inputTypes.FileType[] = [];
 
     for await (const file of this.fileGenerator(args.directory)) {
       files.push({ path: file.path });
@@ -330,7 +299,7 @@ export class OneContextClient {
       throw new Error("No valid files found in the directory");
     }
 
-    return this.uploadFiles({
+    return await this.uploadFiles({
       files,
       contextName: args.contextName,
       maxChunkSize: args.maxChunkSize,
@@ -345,56 +314,37 @@ export class OneContextClient {
    * @example
    * try {
    *   const ocClient = new OneContextClient(BASE_URL, API_KEY);
-   *   ocClient.uploadFiles({
+   *   await ocClient.uploadFiles({
    *     files: [{path: "path/to/file1.pdf"}, {path: "path/to/file2.pdf"}],
    *     contextName: "contextName",
    *     contextId: "contextId",
    *     maxChunkSize: 600
-   *   }).then((res: any) => {
-   *     if (res.ok) {
-   *       res.json().then((data: any) => console.log('Files processed:', data));
-   *     } else {
-   *       console.error('Error processing files.');
-   *     }
    *   })
-   *
    * } catch (error) {
    *   console.error('Error uploading and processing files:', error);
    * }
    */
-  async uploadFiles(args: inputTypes.UploadFilesType): Promise<Response> {
+  async uploadFiles(
+    args: inputTypes.UploadFilesType,
+  ): Promise<outputTypes.FlexibleResponse> {
     // Step 1: Get presigned URLs for all files
     const fileNames = args.files.map((file) =>
-      "path" in file ? path.basename(file.path) : file.name || "unnamed_file"
+      "path" in file ? path.basename(file.path) : "unnamed_file"
     );
-    const presignedUrlsResponse = await this.request(
-      "context/file/presigned-upload-url",
-      {
-        method: "POST",
-        body: JSON.stringify({
-          fileNames,
-          contextName: args.contextName,
-        }),
-      },
-    );
-
-    if (!presignedUrlsResponse.ok) {
-      throw new Error("Failed to get presigned URLs");
-    }
-
-    const presignedResponse = await presignedUrlsResponse.json();
-    const presignedResponseData = outputTypes.generatePresignedResponseSchema
-      .safeParse(presignedResponse);
-    if (!presignedResponseData.success) {
-      throw new Error(
-        "Invalid response from server while obtaining presigned upload URLs",
+    const presignedUrlsResponse: outputTypes.GeneratePresignedResponse =
+      await this.request(
+        "context/file/presigned-upload-url",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            fileNames,
+            contextName: args.contextName,
+          }),
+        },
       );
-    }
-
-    const data = presignedResponseData.data as GeneratePresignedResponse;
 
     const uploadPromises = args.files.map(async (file, index) => {
-      const { presignedUrl, fileId, gcsUri } = data[index];
+      const { presignedUrl, fileId, gcsUri } = presignedUrlsResponse[index];
       // only one metadataJson for all files in this upload batch
       // i.e. the type is a singular object, not an array of objects (for now)
       const metadataJson = args.metadataJson;
@@ -402,19 +352,9 @@ export class OneContextClient {
       let fileName: string;
       let fileType: string;
 
-      if ("path" in file) {
-        // File is a PathFile
-        fileName = basename(file.path);
-        fileContent = await Deno.readFile(file.path);
-        fileType = utils.getMimeType(file.path);
-      } else if ("readable" in file) {
-        // File is a ContentFile
-        fileName = file.name || uuidv4();
-        fileContent = file.readable;
-        fileType = file.type || "application/octet-stream";
-      } else {
-        throw new Error("Invalid file object");
-      }
+      fileName = basename(file.path);
+      fileContent = await Deno.readFile(file.path);
+      fileType = utils.getMimeType(file.path);
 
       try {
         const uploadResponse = await fetch(presignedUrl, {
@@ -424,7 +364,12 @@ export class OneContextClient {
         });
 
         if (!uploadResponse.ok) {
-          throw new Error(`Upload failed with status ${uploadResponse.status}`);
+          const errorBody = await uploadResponse.text();
+          throw new Error(
+            `Upload failed with status ${uploadResponse.status}, body: ${errorBody}`,
+          );
+        } else {
+          await uploadResponse.body?.cancel();
         }
 
         return {
@@ -473,23 +418,16 @@ export class OneContextClient {
    * @example
    * try {
    *   const ocClient = new OneContextClient(BASE_URL, API_KEY);
-   *   ocClient.setOpenAIApiKey({
+   *   await ocClient.setOpenAIApiKey({
    *     openAIApiKey: "your-openai-key"
-   *   }).then((res: any) => {
-   *     if (res.ok) {
-   *       res.json().then((data) => console.log('OpenAI Key Correctly Set:', data));
-   *     } else {
-   *       console.error('Error setting key.');
-   *     }
    *   })
-   *
    * } catch (error) {
    *   console.error('Error setting key:', error);
    * }
    */
   async setOpenAIApiKey(
     args: inputTypes.SetOpenAIApiKeyType,
-  ): Promise<Response> {
+  ): Promise<outputTypes.FlexibleResponse> {
     return await this.request("user/updateUserMeta", {
       method: "POST",
       body: JSON.stringify(args),

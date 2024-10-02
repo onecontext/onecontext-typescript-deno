@@ -1,7 +1,7 @@
 import ocClient from "../construct.ts";
 
 try {
-  const result = await ocClient.contextGet(
+  await ocClient.contextGet(
     {
       "contextName": "lots",
       "metadataFilters": {
@@ -11,13 +11,6 @@ try {
       "includeEmbedding": false,
     },
   );
-  if (result.ok) {
-    await result.json().then((data: any) =>
-      console.log("Search results:", data)
-    );
-  } else {
-    console.error("Error searching context.");
-  }
 } catch (error) {
   console.error("Error searching context.", error);
 }

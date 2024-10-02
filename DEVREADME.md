@@ -1,7 +1,7 @@
-# Official OneContext TypeScript Deno SDK
+# Official OneContext TypeScript SDK
 
-This is the official (Deno) TypeScript SDK for the OneContext platform. Use this SDK to connect your backend applications (with Deno),
-and CLI tools, to OneContext's platform.
+This is the official TypeScript SDK for the OneContext platform. Use this SDK to connect your Node backend applications,
+and Node CLI tools, to OneContext's platform.
 
 ## What is OneContext?
 
@@ -16,7 +16,7 @@ models, GPUs, autoscaling, load balancing, etc).
 #### Get the SDK from npm
 
 ```bash
-deno add @onecontext/sdk
+npm install @onecontext/ts-sdk-v2
 ```
 
 #### API Key
@@ -28,12 +28,6 @@ If you've misplaced your API key, you can rotate your existing one [here](https:
 
 ### Quickstart
 
-Clone this repo
-
-```zsh
-git clone https://github.com/onecontext/onecontext-typescript-deno.git
-```
-
 #### Pop your API key in an .env file in the root of the repo (i.e. in the same directory as the package.json)
 
 ```zsh
@@ -43,7 +37,7 @@ touch .env
 Add your API key to this .env file like so:
 
 ```dotenv
-ONECONTEXT_API_KEY=your_api_key_here
+API_KEY=your_api_key_here
 ```
 
 ## Play around
@@ -126,7 +120,6 @@ try {
     stream: false,
     maxChunkSize: 400
   })
-
 } catch (error) {
   console.error('Error uploading files:', error);
 }
