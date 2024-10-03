@@ -5,13 +5,11 @@ import type {JsonSchemaType} from "./../../types/inputs.ts";
 
 try {
   const candidate = z.object({
-    hi: z.string().describe("a title of a 1970s rockband"),
+    title: z.string().describe("a title of a 1970s rockband"),
+    lyrics: z.string().describe("lyrics to their absolute banger of a song"),
   });
 
-  // deno-lint-ignore TS2589
-  // @ts-ignore -- type checking will throw infinite recursion error here
-  // this is because there are a LOT of types zodToJsonSchema can compose...
-  // this is ~fine...
+  // @ts-ignore 
   const jsonCandidate: JsonSchemaType = zodToJsonSchema(candidate);
 
   if (!jsonCandidate) {
@@ -20,11 +18,10 @@ try {
 
   const output = await ocClient.contextSearch(
     {
-      "query":
-        "generate me a lasagna recipe based on the chunks in the context.",
+      "query": "return chunks relating to rockbands",
       "contextName": "counsel",
       "metadataFilters": {
-        // $and: [{ age: { $eq: 30 } }, { name: { $contains: "ross" } }],
+        $and: [{ year: { $eq: 1970 } }, { label: { $contains: "columbia" } }],
       },
       "topK": 20,
       "semanticWeight": 0.3,
@@ -36,6 +33,7 @@ try {
   );
   
   console.log("Chunks: ", output.chunks)
+  console.log("Output: ", output.output)
   
 } catch (error) {
   console.error("Error searching context.", error);

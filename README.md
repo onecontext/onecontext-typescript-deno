@@ -13,7 +13,9 @@ models, GPUs, autoscaling, load balancing, etc).
 
 ## Sounds great. How do I get started?
 
-#### Get the SDK from npm
+### Quickstart
+
+#### Install the SDK
 
 ```bash
 deno add @onecontext/sdk
@@ -26,13 +28,6 @@ of your project, or export it from the command line as an environment variable.
 
 If you've misplaced your API key, you can rotate your existing one [here](https://app.onecontext.ai/settings).
 
-### Quickstart
-
-Clone this repo
-
-```zsh
-git clone https://github.com/onecontext/onecontext-typescript-deno.git
-```
 
 #### Pop your API key in an .env file in the root of the repo (i.e. in the same directory as the package.json)
 
@@ -48,61 +43,68 @@ ONECONTEXT_API_KEY=your_api_key_here
 
 ## Play around
 
-### Initialise the OneContext client
+For the quickest set up, just clone [this](https://github.com/onecontext/onecontext-typescript-deno.git) repo and have a look at the `example-folder` for fully worked examples of how to do almost everything.
+
+```zsh
+git clone https://github.com/onecontext/onecontext-typescript-deno.git
+```
+
+Or, follow along below:
+
+### Instantiate the client 
+
+#### Make a helper script
 
 ```zsh
 touch construct.ts
 ```
 
-Add the below into that file
+#### Pop the following in it
 
 ```ts
-import {OneContextClient} from "@onecontext/ts-sdk-v2"
-import * as dotenv from 'dotenv';
-import {fileURLToPath} from 'url';
-import path from 'path';
+import { OneContextClient } from "./../mod.ts";
+import "jsr:@std/dotenv/load";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const envPath = path.resolve(__dirname, '.env');
-dotenv.config({path: envPath});
-
-const API_KEY = process.env.API_KEY;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const API_KEY = Deno.env.get("ONECONTEXT_API_KEY");
+const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
+const BASE_URL = Deno.env.get("BASE_URL");
 
 // Check if required environment variables are set
-if (!API_KEY) {
-  console.error('Missing required environment variables. Please check your .env file.');
-  process.exit(1);
+if (!API_KEY || !OPENAI_API_KEY) {
+console.error(
+"Missing required environment variables. Please check your .env file.",
+);
+Deno.exit(1);
 }
 
-const ocClient = new OneContextClient(API_KEY, OPENAI_API_KEY);
+const ocClient = new OneContextClient({
+apiKey: API_KEY,
+openAiKey: OPENAI_API_KEY,
+baseUrl: BASE_URL || undefined,
+});
 
 export default ocClient;
 ```
 
-
-Compile that so you can import it easily for the next examples
-```zsh
-tsc
-```
 
 ### Create a Context
 
 A `Context` is where you store your data. You can think of a `Context` as a "File Store", a "Knowledge Base", a "Second Brain", etc..
 
 ```ts
-import ocClient from './construct.ts';
+import ocClient from "./construct.ts";
 
 try {
-  const result = await ocClient.createContext({contextName: "contextExample"})
+  const out = await ocClient.createContext({ contextName: "exampleContext" });
+  console.log(out)
 } catch (error) {
-  console.error('Error creating context.', error);
+  console.error("Error creating context.", error);
 }
 ```
 
 ### Throw a load of files at it
 
-Now you can enrich your context with knowledge. You can make your context an expert in anything, just add files.
+Now you can enrich your context with knowledge. You can make your context an expert in anything, just add files (PDF, DocX, .txt, .jpeg, etc.).
 
 If you're on the free plan, you can have just one context, with up to 10 files (of less than 50 pages each). If you're
 on the pro plan, you can have up to 5,000 contexts, each with up to 5,000 files.
@@ -114,37 +116,37 @@ requests with just one filepath in the array. We can process the jobs much faste
 likely to hit our rate limits.
 
 ```ts
-import ocClient from './construct.ts';
+import ocClient from "./construct.ts";
 
 try {
-  await ocClient.uploadFiles({
-    files: [
-      {path: "/Users/demoUser/exampleDirectory/attention_is_all_you_need.pdf"},
-      {path: "/Users/demoUser/exampleDirectory/AN-other-file.pdf"},
-    ],
-    contextName: "contextExample",
-    stream: false,
-    maxChunkSize: 400
-  })
-
+  const out = await ocClient.uploadFiles({
+    files: [{
+      path:
+        "/User/Folder/Example/example.pdf",
+    }],
+    contextName: "exampleContext",
+    maxChunkSize: 400,
+  });
+  console.log(out)
 } catch (error) {
-  console.error('Error uploading files:', error);
+  console.error("Error uploading files:", error);
 }
 ```
 
 #### You can also add full directories of files
 
 ```ts
-import ocClient from './construct.ts';
+import ocClient from "./construct.ts";
 
 try {
-  await ocClient.uploadDirectory({
-    directory: "/Users/exampleUser/exampleDirectory/",
-    contextName: "contextExample",
-    maxChunkSize: 400
-  })
+  const out = await ocClient.uploadDirectory({
+    directory: "/User/Folder/Example/",
+    contextName: "exampleContext",
+    maxChunkSize: 400,
+  });
+  console.log(out)
 } catch (error) {
-  console.error('Error uploading directory:', error);
+  console.error("Error fetching context list:", error);
 }
 ```
 
@@ -152,42 +154,43 @@ try {
 #### List the files in a particular context
 
 ```ts
-import ocClient from './construct.ts';
+import ocClient from "./construct.ts";
 
 try {
-  const result = await ocClient.listFiles({contextName: "contextName"})
+  await ocClient.listFiles({ contextName: "exampleContext" });
 } catch (error) {
-  console.error('Error fetching files list:', error);
+  console.error("Error fetching context list:", error);
 }
 ```
 
 #### List the contexts you have
 
 ```ts
-import ocClient from './construct.ts';
+import ocClient from "./construct.ts";
 
 try {
-  const result = await ocClient.contextList()
+  const out = await ocClient.contextList();
+  console.log(out)
 } catch (error) {
-  console.error('Error fetching context list:', error);
+  console.error("Error fetching context list:", error);
 }
 ```
 
 #### Delete any contexts you no longer wish to have
 
 ```ts
-import ocClient from './construct.ts';
+import ocClient from "./construct.ts";
 
 try {
-  const result = await ocClient.deleteContext({contextName: 'contextExample'})
+  const out = await ocClient.deleteContext({ contextName: "exampleContext" });
+  console.log(out)
 } catch (error) {
-  console.error('Error deleting context:', error);
+  console.error("Error deleting context.");
 }
 ```
 
 
 #### Search through your context
-
 Use this method to quickly search through your entire context (which can be thousands of files / hundreds of thousands
 of pages).
 
@@ -197,27 +200,121 @@ More details on the arguments for this method:
 - topK: the number of "chunks" of context that will be retrieved.
 - semanticWeight: how much to weight the relevance of the "semantic" similarity of the word. e.g. "Why, sometimes I've believed as many as six impossible things before breakfast." would be similar to "The man would routinely assume the veracity of ludicrous ideas in the morning", even though the words don't really have a lot in common.
 - fullTextWeight: how much to weight the relevance of the similarity of the actual words in the context. e.g. "The King is at the palace, with the Queen", would be quite similar to "Knight takes Queen on e4", even though semantically these sentences have quite different meanings.
-- rrfK: quite a technical parameter which determines how we merge the scores for semantic, and fullText weights. For more see [here](https://learn.microsoft.com/en-us/azure/search/hybrid-search-ranking)
+- rrfK:  a technical parameter which determines how we merge the scores for semantic, and fullText weights. For more see [here](https://learn.microsoft.com/en-us/azure/search/hybrid-search-ranking)
 - includeEmbedding: a Boolean value to be set to True or False depending on whether you want to do something with the embeddings for each chunk. If you want to do clustering or visualise the results in multidimensional space, choose True. If you just want fast context for your language model prompts, choose False.
+- metadataFilters: An optional dictionary of criteria which can be used to filter results based on
+  metadata. See the [OneContext Structured Query Language](#onecontext-structured-query-language) section below for the
+  syntax details.
+- structuredOutputSchema: an optional [JsonSchema](https://json-schema.org/) object you can pass, if you want to co-erce the output of the Search into a defined schema. In the example below we create a [Zod](https://zod.dev/) object and then use [ZodToJsonSchema](https://www.npmjs.com/package/zod-to-json-schema) to parse it to a [JsonSchema](https://json-schema.org/) object, but you can pass a straight-up [JsonSchema](https://json-schema.org/) object if you prefer less dependencies.
 
 ```ts
-import ocClient from '../../construct.ts';
+import ocClient from "./../construct.ts";
+import { zodToJsonSchema } from "npm:zod-to-json-schema";
+import { z } from "npm:zod@3.23.8";
+import type {JsonSchemaType} from "./../../types/inputs.ts";
 
 try {
-  const result = await ocClient.contextSearch(
+  const candidate = z.object({
+    title: z.string().describe("a title of a 1970s rockband"),
+    lyrics: z.string().describe("lyrics to their absolute banger of a song"),
+  });
+
+  // @ts-ignore 
+  const jsonCandidate: JsonSchemaType = zodToJsonSchema(candidate);
+
+  if (!jsonCandidate) {
+    throw new Error("Failed to generate the Json Structured Output");
+  }
+
+  const output = await ocClient.contextSearch(
     {
-      "query": "An example query you can use to search through all the data in your context",
-      "contextName": "contextExample",
-      "topK": 25,
-      "semanticWeight": 0.5,
-      "fullTextWeight": 0.5,
-      "rrfK": 60,
-      "includeEmbedding": false
-    }
-  )
+      "query": "return chunks relating to rockbands",
+      "contextName": "counsel",
+      "metadataFilters": {
+        $and: [{ year: { $eq: 1970 } }, { label: { $contains: "columbia" } }],
+      },
+      "topK": 20,
+      "semanticWeight": 0.3,
+      "fullTextWeight": 0.7,
+      "rrfK": 50,
+      "includeEmbedding": false,
+      "structuredOutputSchema": jsonCandidate,
+    },
+  );
+
+  console.log("Chunks: ", output.chunks)
+  console.log("Output: ", output.output)
+
 } catch (error) {
-  console.error('Error searching context.', error);
+  console.error("Error searching context.", error);
 }
+
+```
+#### Retrieve chunks from your context (without semantic searching)
+Use this method to quickly retrieve chunks from your context which correspond to a set of filters.
+
+More details on the arguments for this method:
+- contextName: the context you wish to execute the search over.
+- limit: the number of "chunks" of context that will be retrieved.
+- includeEmbedding: a Boolean value to be set to True or False depending on whether you want to do something with the embeddings for each chunk. If you want to do clustering or visualise the results in multidimensional space, choose True. If you just want fast context for your language model prompts, choose False.
+- metadataFilters: A dictionary of criteria used to filter results based on
+  metadata. See the [OneContext Structured Query Language](#onecontext-structured-query-language) section below for the
+  syntax details.
+
+```ts
+import ocClient from './construct.js';
+
+try {
+  const out = await ocClient.contextGet(
+    {
+      "contextName": "lots",
+      "metadataFilters": {
+        $and: [{ age: { $gt: 10 } }, { name: { $contains: "ross" } }],
+      },
+      "limit": 5,
+      "includeEmbedding": false,
+    },
+  );
+  console.log(out)
+} catch (error) {
+  console.error("Error searching context.", error);
+}
+
 ```
 
-# onecontext-typescript-deno
+# OneContext Structured Query Language
+
+OneContext allows you to use a custom "Structured Query Language" to filter
+the chunks in your context.
+
+The syntax is quite similar to what you might find in no-SQL databases like
+MongoDB, even though it operates on a SQL database at its core.
+
+The syntax is based around the application of `operators`. There are _two_
+levels of operators. You can interpret the two levels as "aggregators" and
+"comparators".
+
+### Aggregators
+The aggregator operators you can use are:
+
+| Key          | Value Description                                                                                                                                           |
+|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `$and`       | Returns True i.f.f. _all_ of the conditions in this block return True.
+| `$or`        | Returns True if _any_ of the conditions in this block return True.
+
+### Comparators
+The comparator operators you can use are:
+
+| Key          | Value Description                                                                   | Supplied Value Type | Returned Value Type          |
+|--------------|-------------------------------------------------------------------------------------|---------------------|------------------------------|
+| `$eq`        | Returns True if the value returned from the DB is equal to the supplied value.      | `string             | int | float`       | `string | int | float`       |
+| `$neq`        | Returns True if the value returned from the DB is not equal to the supplied value.      | `string             | int | float`       | `string | int | float`       |
+| `$gt`        | Returns True if the value returned from the DB is greater than the supplied value.  | `int                | float`                | `int | float`                |
+| `$lt`        | Returns True if the value returned from the DB is less than the supplied value.     | `int                | float`                | `int | float`                |
+| `$in`        | Returns True if the value returned from the DB is contained by the supplied array.  | `array<string>`      | int | float>`| `string | int | float`       |
+| `$contains`  | Returns True if the array value returned from the DB contains the supplied value.   | `string             | int | float`       | `array<string | int | float>`|
+
+
+## License
+
+`onecontext` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
