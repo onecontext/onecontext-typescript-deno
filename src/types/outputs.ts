@@ -8,7 +8,12 @@ export const FlexibleResponseSchema = z
 
 export type FlexibleResponse = z.infer<typeof FlexibleResponseSchema>;
 
-export const uploadParamsResponse = z.object({
+export const uploadParamsResponse: z.ZodType<{
+  presignedUrl: string;
+  expiresAt: string;
+  fileId: string;
+  gcsUri: string;
+}> = z.object({
   presignedUrl: z.string().url(),
   expiresAt: z.string(),
   fileId: z.string().uuid(),
@@ -36,7 +41,10 @@ const listFilesResponseSchema = z.object({
 
 export type ListFilesResponse = z.infer<typeof listFilesResponseSchema>;
 
-const contextCreateResponseSchema = z.object({
+const contextCreateResponseSchema: z.ZodType<{
+  id: string;
+  name: string;
+}> = z.object({
   id: z.string(),
   name: z.string(),
 });
@@ -47,25 +55,40 @@ export type GeneratePresignedResponse = z.infer<
   typeof generatePresignedResponseSchema
 >;
 
-const chunkSchema = z.object({
+const chunkSchema: z.ZodType<{
+  id: string;
+  content: string;
+  user_id: string;
+  file_name: string;
+  file_id: string;
+  context_id: string;
+  metadata_json?: Record<string, number | boolean | string | null>;
+  embedding?: number[];
+  semantic_score?: number 
+  fulltext_score?: number
+  combined_score?: number
+}> = z.object({
   id: z.string(),
   content: z.string(),
   user_id: z.string(),
   file_name: z.string(),
   file_id: z.string(),
   context_id: z.string(),
-  metadata_json: z.record(z.string(), z.any()).nullable().default(null),
-  embedding: z.any().nullable().default(null),
-  semantic_score: z.number().nullable().default(null),
-  fulltext_score: z.number().nullable().default(null),
-  combined_score: z.number().nullable().default(null),
+  metadata_json: z.record(z.string(), z.union([z.string(),z.number(),z.boolean(),z.null()])).optional(),
+  embedding: z.array(z.number()).optional(),
+  semantic_score: z.number().optional(),
+  fulltext_score: z.number().optional(),
+  combined_score: z.number().optional()
 });
 
-const ChunksResponse = z.array(chunkSchema);
+export type Chunk = z.infer<typeof chunkSchema>;
 
-const ChunkOperationResponse = z.object({
-  chunks: ChunksResponse,
+const ChunkOperationResponseSchema: z.ZodType<{
+  chunks: Chunk[]; 
+  output?: FlexibleResponse;
+}> = z.object({
+  chunks: z.array(chunkSchema),
   output: z.any(),
 });
 
-export type ChunkOperationResponse = z.infer<typeof ChunkOperationResponse>;
+export type ChunkOperationResponse = z.infer<typeof ChunkOperationResponseSchema>;
