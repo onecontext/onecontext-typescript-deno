@@ -1,4 +1,4 @@
-import * as path from "jsr:@std/path";
+import * as path from "jsr:@std/path@1";
 import { basename, extname, join, relative } from "jsr:@std/path@1";
 import type * as inputTypes from "./types/inputs.ts";
 import type * as outputTypes from "./types/outputs.ts";
@@ -98,7 +98,7 @@ export class OneContextClient {
    */
   async deleteContext(
     args: inputTypes.ContextDeleteType,
-  ): Promise<outputTypes.FlexibleResponse> {
+  ): Promise<outputTypes.FlexibleType> {
     return await this.request(`context`, {
       method: "DELETE",
       body: JSON.stringify(args),
@@ -116,7 +116,7 @@ export class OneContextClient {
    *   console.error('Error fetching list of contexts', error);
    * }
    */
-  async contextList(): Promise<outputTypes.FlexibleResponse> {
+  async contextList(): Promise<outputTypes.FlexibleType> {
     return await this.request("context", {
       method: "GET",
     });
@@ -206,7 +206,7 @@ export class OneContextClient {
    */
   async deleteFile(
     args: inputTypes.DeleteFileType,
-  ): Promise<outputTypes.FlexibleResponse> {
+  ): Promise<outputTypes.FlexibleType> {
     const renamedArgs = {
       fileId: args.fileId,
     };
@@ -237,7 +237,7 @@ export class OneContextClient {
    */
   async getDownloadUrl(
     args: inputTypes.DownloadUrlType,
-  ): Promise<outputTypes.FlexibleResponse> {
+  ): Promise<outputTypes.FlexibleType> {
     return await this.request("context/file/presigned-download-url", {
       method: "POST",
       body: JSON.stringify(args),
@@ -282,7 +282,7 @@ export class OneContextClient {
    */
   async uploadDirectory(
     args: inputTypes.UploadDirectoryType,
-  ): Promise<outputTypes.FlexibleResponse> {
+  ): Promise<outputTypes.FlexibleType> {
     const files: inputTypes.FileType[] = [];
 
     for await (const file of this.fileGenerator(args.directory)) {
@@ -320,7 +320,7 @@ export class OneContextClient {
    */
   async uploadFiles(
     args: inputTypes.UploadFilesType,
-  ): Promise<outputTypes.FlexibleResponse> {
+  ): Promise<outputTypes.FlexibleType> {
     // Step 1: Get presigned URLs for all files
     const fileNames = args.files.map((file) =>
       "path" in file ? path.basename(file.path) : "unnamed_file"
@@ -421,7 +421,7 @@ export class OneContextClient {
    */
   async setOpenAIApiKey(
     args: inputTypes.SetOpenAIApiKeyType,
-  ): Promise<outputTypes.FlexibleResponse> {
+  ): Promise<outputTypes.FlexibleType> {
     return await this.request("user/updateUserMeta", {
       method: "POST",
       body: JSON.stringify(args),

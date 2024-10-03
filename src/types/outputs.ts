@@ -1,8 +1,8 @@
 import { z } from "npm:zod@3.23.8";
 
-export const FlexibleResponseSchema: z.ZodAny = z.any()
+export const FlexibleSchema: z.ZodAny = z.any()
 
-export type FlexibleResponse = z.infer<typeof FlexibleResponseSchema>;
+export type FlexibleType = z.infer<typeof FlexibleSchema>;
 
 export const uploadParamsResponseSchema: z.ZodType<{
   presignedUrl: string;
@@ -89,7 +89,7 @@ export type Chunk = z.infer<typeof chunkSchema>;
 
 const ChunkOperationResponseSchema: z.ZodType<{
   chunks: Chunk[]; 
-  output?: FlexibleResponse;
+  output?: FlexibleType;
 }> = z.object({
   chunks: z.array(chunkSchema),
   output: z.any(),

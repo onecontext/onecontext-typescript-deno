@@ -1,4 +1,4 @@
-import * as path from "jsr:@std/path";
+import * as path from "jsr:@std/path@1";
 
 const colors = {
   reset: "\x1b[0m",

@@ -1,6 +1,9 @@
 import { z } from "npm:zod@3.23.8";
+import type {FlexibleType} from "./outputs.ts";
 
-const MetadataFilters = z.record(z.string(), z.any());
+const MetadataFilters: z.ZodType<{
+  [k: string]: FlexibleType 
+}> = z.record(z.string(), z.any());
 export type MetadataFilters = z.infer<typeof MetadataFilters>;
 
 /**
@@ -13,7 +16,9 @@ const _OpenAISchema = z.object({
 /**
  * Schema for setting the OpenAI API key.
  */
-const SetOpenAIKeySchema = z.object({
+const SetOpenAIKeySchema: z.ZodType<{
+  openAIApiKey: string;
+}> = z.object({
   openAIApiKey: z.string().refine((val: any) => val.trim() !== "", {
     message: "OpenAI API key cannot be empty",
   }),
