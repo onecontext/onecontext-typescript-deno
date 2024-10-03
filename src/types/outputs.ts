@@ -1,14 +1,10 @@
 import { z } from "npm:zod@3.23.8";
 
-export const FlexibleResponseSchema = z
-  .object({
-    message: z.string(),
-  })
-  .passthrough();
+export const FlexibleResponseSchema: z.ZodAny = z.any()
 
 export type FlexibleResponse = z.infer<typeof FlexibleResponseSchema>;
 
-export const uploadParamsResponse: z.ZodType<{
+export const uploadParamsResponseSchema: z.ZodType<{
   presignedUrl: string;
   expiresAt: string;
   fileId: string;
@@ -20,22 +16,33 @@ export const uploadParamsResponse: z.ZodType<{
   gcsUri: z.string(),
 });
 
-export const generatePresignedResponseSchema = z.array(uploadParamsResponse);
+export type UploadParamsResponse = z.infer<typeof uploadParamsResponseSchema>;
 
-export const fileResponseSchema = z.object({
+export const fileResponseSchema: z.ZodType<{
+  id: string;
+  date_created: string;
+  status: string;
+  name: string;
+  context_name: string;
+  context_id: string;
+  metadata_json?: Record<string, string | number | boolean | null>;
+  download_url?: string;
+}> = z.object({
   id: z.string(),
   date_created: z.string(),
   status: z.string(),
   name: z.string(),
   context_name: z.string(),
   context_id: z.string(),
-  metadata_json: z.record(z.string(), z.any()).nullable().default(null),
+  metadata_json: z.record(z.string(), z.union([z.string(),z.number(),z.boolean(),z.null()])).optional(),
   download_url: z.string().optional(),
 });
 
 export type FileResponse = z.infer<typeof fileResponseSchema>;
 
-const listFilesResponseSchema = z.object({
+const listFilesResponseSchema: z.ZodType<{
+  files: FileResponse[];
+}> = z.object({
   files: z.array(fileResponseSchema), // Ideally, replace z.any() with a more specific schema for the items in the files array.
 });
 
@@ -51,9 +58,6 @@ const contextCreateResponseSchema: z.ZodType<{
 
 export type ContextCreateResponse = z.infer<typeof contextCreateResponseSchema>;
 
-export type GeneratePresignedResponse = z.infer<
-  typeof generatePresignedResponseSchema
->;
 
 const chunkSchema: z.ZodType<{
   id: string;

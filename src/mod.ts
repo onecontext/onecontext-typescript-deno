@@ -325,7 +325,7 @@ export class OneContextClient {
     const fileNames = args.files.map((file) =>
       "path" in file ? path.basename(file.path) : "unnamed_file"
     );
-    const presignedUrlsResponse: outputTypes.GeneratePresignedResponse =
+    const presignedUrlsResponse: outputTypes.UploadParamsResponse[] =
       await this.request(
         "context/file/presigned-upload-url",
         {
