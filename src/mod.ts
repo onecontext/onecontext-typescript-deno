@@ -1,10 +1,5 @@
 import * as path from "jsr:@std/path";
-import {
-  basename,
-  extname,
-  join,
-  relative,
-} from "https://deno.land/std/path/mod.ts";
+import { basename, extname, join, relative } from "jsr:@std/path@1";
 import * as inputTypes from "./types/inputs.ts";
 import * as outputTypes from "./types/outputs.ts";
 import { GeneratePresignedResponse } from "./types/outputs.ts";

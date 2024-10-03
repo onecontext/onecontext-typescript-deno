@@ -1,5 +1,5 @@
 import ocClient from "../../../construct.ts";
-import { join } from "https://deno.land/std/path/mod.ts";
+import { join } from "jsr:@std/path@1";
 
 let filePathArray: Array<string> = [];
 
