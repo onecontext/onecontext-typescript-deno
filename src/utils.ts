@@ -1,5 +1,8 @@
 import * as path from "jsr:@std/path@1";
 
+/**
+ * Nice colors for printing things to the console in a non brain-hurt way. 
+ */
 const colors = {
   reset: "\x1b[0m",
   red: "\x1b[31m",
@@ -10,14 +13,31 @@ const colors = {
   cyan: "\x1b[36m",
 };
 
+/**
+ * Helper function for sleeping for a given number of milliseconds. 
+ * @param ms The number of milliseconds to sleep for.
+ * @returns A promise that resolves after the given number of milliseconds.
+ */
 export function sleep({ ms }: { ms: number }): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Helper function for logging to the console with a given color. 
+ * @param message The message to log.
+ * @param color The color to log the message in.
+ * @returns void
+ */
 function _logWithColor(message: string, color: keyof typeof colors): void {
   console.log(`${colors[color]}${message}${colors.reset}`);
 }
 
+/**
+ * Helper function for logging to the console with a given color.
+ * @param message The message to log.
+ * @param color The color to log the message in.
+ * @returns void
+ */
 export function textWithColor(
   message: string,
   color: keyof typeof colors,
@@ -25,6 +45,14 @@ export function textWithColor(
   return `${colors[color]}${message}${colors.reset}`;
 }
 
+/**
+ * Helper function for logging to the console with a given color.
+ * @param message The message to log.
+ * @param integerSelect The integer to select the color.
+ * @param returnColor Whether to return a color object or a string. 
+ * @returns Record<string, string> | string
+ * 
+ */
 export function textWithIntSelectedColor(
   message: string,
   integerSelect: number,
@@ -46,6 +74,15 @@ export function textWithIntSelectedColor(
   }
 }
 
+
+/**
+ * Helper function for running many async functions concurrently. 
+ * @param n The number of times to run the function.
+ * @param callable The function to run.
+ * @param callableArgs The arguments to pass to the function.
+ * @returns An array of resolved promises Promise<TReturn[]> 
+ *
+ */
 export const runMany = async <TArgs, TReturn>({
   n,
   callable,
@@ -75,7 +112,12 @@ export const runMany = async <TArgs, TReturn>({
   return results;
 };
 
-// Simple MIME type mapping
+/**
+ * Helper function for getting the mime type of a file based on its extension. 
+ * @param filePath The path to the file.
+ * @returns The mime type of the file. 
+ *
+ */
 export const getMimeType = (filePath: string): string => {
   const ext = path.extname(filePath).toLowerCase();
   const mimeTypes: { [key: string]: string } = {

@@ -5,6 +5,19 @@ import type * as outputTypes from "./types/outputs.ts";
 import * as utils from "./utils.ts";
 export * from "./utils.ts";
 
+/**
+ * The object for interacting with the API
+ * @param apiKey -  The API key for authentication.
+ * @param openAiKey - Optional OpenAI API key.
+ * @param baseUrl - The base URL for the OneContext API.
+ * @returns - An instantiated client object.
+ * @example
+ * try {
+ *   const ocClient = new OneContextClient({apiKey: API_KEY, openAiKey: OPENAI_API_KEY, baseUrl: BASE_URL});
+ * } catch (error) {
+ *   console.error('Error instantiating client', error);
+ * }
+ */
 export class OneContextClient {
   private readonly apiKey: string;
   private baseUrl: string;
