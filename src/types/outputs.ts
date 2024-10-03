@@ -30,13 +30,13 @@ export const fileResponseSchema = z.object({
 
 export type FileResponse = z.infer<typeof fileResponseSchema>;
 
-export const listFilesResponseSchema = z.object({
+const listFilesResponseSchema = z.object({
   files: z.array(fileResponseSchema), // Ideally, replace z.any() with a more specific schema for the items in the files array.
 });
 
 export type ListFilesResponse = z.infer<typeof listFilesResponseSchema>;
 
-export const contextCreateResponseSchema = z.object({
+const contextCreateResponseSchema = z.object({
   id: z.string(),
   name: z.string(),
 });
@@ -47,7 +47,7 @@ export type GeneratePresignedResponse = z.infer<
   typeof generatePresignedResponseSchema
 >;
 
-export const chunkSchema = z.object({
+const chunkSchema = z.object({
   id: z.string(),
   content: z.string(),
   user_id: z.string(),
@@ -61,9 +61,9 @@ export const chunkSchema = z.object({
   combined_score: z.number().nullable().default(null),
 });
 
-export const ChunksResponse = z.array(chunkSchema);
+const ChunksResponse = z.array(chunkSchema);
 
-export const ChunkOperationResponse = z.object({
+const ChunkOperationResponse = z.object({
   chunks: ChunksResponse,
   output: z.any(),
 });

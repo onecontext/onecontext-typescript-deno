@@ -10,27 +10,11 @@ const colors = {
   cyan: "\x1b[36m",
 };
 
-export function sleep({ ms }: { ms: number }) {
+export function sleep({ ms }: { ms: number }): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function flatKey(
-  { obj, key }: { obj: Record<string, any>; key: string },
-): any {
-  if (!obj[key]) {
-    return obj;
-  }
-  const flattenedObject = { ...obj, ...obj[key] };
-  if (!flattenedObject._split_overlap) {
-    const { [key]: _, ...rest } = flattenedObject;
-    return rest;
-  } else {
-    const { [key]: _, _split_overlap, ...rest } = flattenedObject;
-    return rest;
-  }
-}
-
-function logWithColor(message: string, color: keyof typeof colors): void {
+function _logWithColor(message: string, color: keyof typeof colors): void {
   console.log(`${colors[color]}${message}${colors.reset}`);
 }
 
@@ -45,7 +29,7 @@ export function textWithIntSelectedColor(
   message: string,
   integerSelect: number,
   returnColor: boolean,
-): any {
+): Record<string, string> | string {
   // for cycling through updates and changing colors on the go
   const choices: (keyof typeof colors)[] = Object.keys(colors).filter((color) =>
     color !== "reset"
@@ -62,11 +46,15 @@ export function textWithIntSelectedColor(
   }
 }
 
-export const runMany = async ({ n, callable, callableArgs }: {
+export const runMany = async <TArgs, TReturn>({
+  n,
+  callable,
+  callableArgs,
+}: {
   n: number;
-  callable: (callableArgs: any) => any;
-  callableArgs: any;
-}) => {
+  callable: (callableArgs: TArgs) => Promise<TReturn>;
+  callableArgs: TArgs;
+}): Promise<TReturn[]> => {
   const t0 = performance.now();
 
   // Create an array of Promises by invoking the callable function `n` times

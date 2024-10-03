@@ -1,19 +1,19 @@
 import { z } from "https://deno.land/x/zod/mod.ts";
 
-export const MetadataFilters = z.record(z.string(), z.any());
+const MetadataFilters = z.record(z.string(), z.any());
 export type MetadataFilters = z.infer<typeof MetadataFilters>;
 
 /**
  * Schema for OpenAI API parameters.
  */
-export const OpenAISchema = z.object({
+const _OpenAISchema = z.object({
   model: z.string().default("gpt-3.5-turbo").optional(),
 });
 
 /**
  * Schema for setting the OpenAI API key.
  */
-export const SetOpenAIKeySchema = z.object({
+const SetOpenAIKeySchema = z.object({
   openAIApiKey: z.string().refine((val: any) => val.trim() !== "", {
     message: "OpenAI API key cannot be empty",
   }),
@@ -22,7 +22,7 @@ export const SetOpenAIKeySchema = z.object({
 /**
  * Schema for deleting files from a context.
  */
-export const DeleteFileSchema = z.object({
+const DeleteFileSchema = z.object({
   fileId: z.string().refine((val: any) => val.length > 0, {
     message: "File id cannot be empty",
   }),
@@ -31,7 +31,7 @@ export const DeleteFileSchema = z.object({
 /**
  * Schema for listing files in a context.
  */
-export const ListFilesSchema = z.object({
+const ListFilesSchema = z.object({
   contextName: z.string(),
   skip: z.number().default(0).optional(),
   limit: z.number().default(10).optional(),
@@ -42,7 +42,7 @@ export const ListFilesSchema = z.object({
 /**
  * Schema for a file that's a path (gets converted to a readable stream)
  */
-export const FileSchema = z.object({
+const FileSchema = z.object({
   path: z.string().refine((val) => val.trim() !== "", {
     message: "Path cannot be empty",
   }),
@@ -51,7 +51,7 @@ export const FileSchema = z.object({
 /**
  * Schema for creating a context
  */
-export const ContextCreateSchema = z.object({
+const ContextCreateSchema = z.object({
   contextName: z.string().refine((val) => val.trim() !== "", {
     message: "Name for your context cannot be empty",
   }),
@@ -60,7 +60,7 @@ export const ContextCreateSchema = z.object({
 /**
  * Schema for deleting a context
  */
-export const ContextDeleteSchema = z.object({
+const ContextDeleteSchema = z.object({
   contextName: z.string().refine((val) => val.trim() !== "", {
     message: "Name of the context to delete cannot be empty",
   }),
@@ -69,12 +69,12 @@ export const ContextDeleteSchema = z.object({
 /**
  * Schema for listing the contexts you have
  */
-export const ListContext = z.object({});
+const _ListContext = z.object({});
 
 /**
  * Schema for filtering a context, and defining the parameters for said filter
  */
-export const ContextGet = z.object({
+const ContextGet = z.object({
   contextName: z.string(),
   metadataFilters: MetadataFilters.default({}).optional(),
   limit: z.union([

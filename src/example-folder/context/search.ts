@@ -21,7 +21,7 @@ try {
     jsonCandidate,
   });
 
-  const result = await ocClient.contextSearch(
+  await ocClient.contextSearch(
     {
       "query":
         "generate me a lasagna recipe based on the chunks in the context.",
@@ -37,11 +37,6 @@ try {
       "structuredOutputSchema": jsonCandidate,
     },
   );
-  if (result.ok) {
-    await result.json().then((data: any) => console.log("Result:", data));
-  } else {
-    console.error("Error searching context.");
-  }
 } catch (error) {
   console.error("Error searching context.", error);
 }
