@@ -1,7 +1,8 @@
 import ocClient from "../construct.ts";
 
 try {
-  await ocClient.deleteContext({ contextName: "livedemo" });
+  const out = await ocClient.deleteContext({ contextName: "livedemo" });
+  console.log(out)
 } catch (error) {
   console.error("Error deleting context.");
 }

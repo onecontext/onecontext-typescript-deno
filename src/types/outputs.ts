@@ -1,4 +1,4 @@
-import { z } from "https://deno.land/x/zod/mod.ts";
+import { z } from "npm:zod@3.23.8";
 
 export const FlexibleResponseSchema = z
   .object({

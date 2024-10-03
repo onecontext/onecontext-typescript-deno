@@ -1,8 +1,6 @@
 import ocClient from "../../../construct.ts";
 import { join } from "jsr:@std/path@1";
 
-let filePathArray: Array<string> = [];
-
 const pathArray = async (
   { directoryPath, numFiles }: { directoryPath: string; numFiles: number },
 ): Promise<string[]> => {

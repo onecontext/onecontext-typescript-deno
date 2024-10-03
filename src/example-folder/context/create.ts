@@ -1,7 +1,8 @@
 import ocClient from "../construct.ts";
 
 try {
-  await ocClient.createContext({ contextName: "deno" });
+  const out = await ocClient.createContext({ contextName: "deno" });
+  console.log(out)
 } catch (error) {
   console.error("Error creating context.", error);
 }

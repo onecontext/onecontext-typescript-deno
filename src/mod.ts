@@ -1,15 +1,14 @@
 import * as path from "jsr:@std/path";
 import { basename, extname, join, relative } from "jsr:@std/path@1";
-import * as inputTypes from "./types/inputs.ts";
-import * as outputTypes from "./types/outputs.ts";
-import { GeneratePresignedResponse } from "./types/outputs.ts";
+import type * as inputTypes from "./types/inputs.ts";
+import type * as outputTypes from "./types/outputs.ts";
 import * as utils from "./utils.ts";
 export * from "./utils.ts";
 
 export class OneContextClient {
-  private apiKey: string;
+  private readonly apiKey: string;
   private baseUrl: string;
-  private openAiKey?: string;
+  private readonly openAiKey?: string;
 
   /**
    * Creates an instance of OneContextClient.

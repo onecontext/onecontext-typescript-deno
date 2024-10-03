@@ -1,4 +1,4 @@
-import {z} from "zod";
+import {z} from "npm:zod@3.23.8";
 
 export const customErrorMap: z.ZodErrorMap = (error, ctx) => {
   /*
@@ -19,4 +19,3 @@ export const customErrorMap: z.ZodErrorMap = (error, ctx) => {
   // fall back to default message!
   return {message: ctx.defaultError};
 };
-
