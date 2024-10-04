@@ -1,4 +1,4 @@
-import ocClient from "../../../construct.ts";
+import {ocClient} from "../../../construct.ts";
 import { join } from "jsr:@std/path@1";
 
 const pathArray = async (

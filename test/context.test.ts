@@ -1,8 +1,13 @@
-import { OneContextClient } from "./../src/mod.ts";
-import { assertEquals, assertExists, assertGreater } from "jsr:@std/assert";
+import {
+  OneContextClient,
+  type ChunkOperationResponse,
+  type StructuredOutputRequestType,
+  type MetadataFilters, utils
+} from "./../src/mod.ts";
+import {assertEquals, assertExists, assertGreater} from "jsr:@std/assert";
 import "jsr:@std/dotenv/load";
 import * as uuid from "jsr:@std/uuid";
-import type { MetadataFilters } from "../src/types/inputs.ts";
+import {z} from "npm:zod@3.23.8";
 
 const API_KEY = Deno.env.get("ONECONTEXT_API_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
@@ -32,7 +37,7 @@ async function waitForProcessing(contextName: string) {
   const waitTime = 10000;
 
   for (let attempts = 0; attempts < maxAttempts; attempts++) {
-    const listResult = await ocClient.listFiles({ contextName });
+    const listResult = await ocClient.listFiles({contextName});
 
     const files = listResult.files;
 
@@ -61,28 +66,38 @@ async function waitForProcessing(contextName: string) {
   throw new Error(`File processing timed out for context ${contextName}`);
 }
 
-async function performSearch(contextName: string, metadataFilters?: any) {
+async function performSearch({query, topK, contextName, metadataFilters, structuredOutputRequest}: {
+  query?: string,
+  topK? : number,
+  contextName: string,
+  metadataFilters?: MetadataFilters,
+  structuredOutputRequest?: StructuredOutputRequestType
+}): Promise<ChunkOperationResponse> {
   return await ocClient.contextSearch({
-    query: "test content",
+    query: query ?? "test content",
     contextName,
-    topK: 5,
+    topK: topK ?? 5,
     semanticWeight: 0.5,
     fullTextWeight: 0.5,
     rrfK: 10,
     includeEmbedding: false,
     metadataFilters,
+    structuredOutputRequest,
   });
 }
 
-async function performGetChunks(
-  contextName: string,
-  metadataFilters?: MetadataFilters,
-) {
+async function performGetChunks({contextName, metadataFilters, structuredOutputRequest}: {
+                                  contextName: string,
+                                  metadataFilters?: MetadataFilters,
+                                  structuredOutputRequest?: StructuredOutputRequestType
+                                }
+): Promise<ChunkOperationResponse> {
   return await ocClient.contextGet({
     contextName,
     limit: 5,
     includeEmbedding: false,
     metadataFilters,
+    structuredOutputRequest,
   });
 }
 
@@ -138,31 +153,31 @@ Deno.test("Upload Files Operations", async (t) => {
   });
 
   await t.step("Perform a vanilla search", async () => {
-    const result = await performSearch(filesContextName);
+    const result = await performSearch({contextName: filesContextName});
     assertGreater(result.chunks.length, 0);
   });
 
   await t.step("Perform a search with metadata filters", async () => {
-    const result = await performSearch(filesContextName, {
+    const result = await performSearch({contextName: filesContextName, metadataFilters: {
       $and: [{
-        "testString": { "$eq": "string" },
+        "testString": {"$eq": "string"},
       }, {
-        "testArray": { "$contains": "testArrayElement1" },
+        "testArray": {"$contains": "testArrayElement1"},
       }, {
-        "testInt": { "$eq": 123 },
+        "testInt": {"$eq": 123},
       }, {
-        "testBool": { "$eq": true },
+        "testBool": {"$eq": true},
       }, {
-        "testFloat": { "$eq": 1.4 },
+        "testFloat": {"$eq": 1.4},
       }],
-    });
+    }});
     assertGreater(result.chunks.length, 0);
   });
 
   await t.step(
     "Perform a Get Chunks Operation, without metadata",
     async () => {
-      const resultsData = await performGetChunks(filesContextName);
+      const resultsData = await performGetChunks({contextName: filesContextName});
       assertGreater(resultsData.chunks.length, 0);
     },
   );
@@ -170,11 +185,11 @@ Deno.test("Upload Files Operations", async (t) => {
   await t.step(
     "Perform a get Chunks Operation, with metadata filters which should result in no chunks",
     async () => {
-      const noResultsData = await performGetChunks(filesContextName, {
+      const noResultsData = await performGetChunks({contextName: filesContextName, metadataFilters : {
         $and: [{
-          "testString": { "$eq": "notWhatWeWant" },
+          "testString": {"$eq": "notWhatWeWant"},
         }],
-      });
+      }});
       assertEquals(noResultsData.chunks.length, 0);
     },
   );
@@ -226,7 +241,7 @@ Deno.test("Upload Directory Operations", async (t) => {
   });
 
   await t.step("Perform a vanilla search against context", async () => {
-    const result = await performSearch(directoryContextName);
+    const result = await performSearch({contextName: directoryContextName});
     assertGreater(result.chunks.length, 0);
     return;
   });
@@ -234,20 +249,38 @@ Deno.test("Upload Directory Operations", async (t) => {
   await t.step(
     "Perform a search with metadata filters against context",
     async () => {
-      const result = await performSearch(directoryContextName, {
+      const result = await performSearch({contextName: directoryContextName,  metadataFilters: {
         $and: [{
-          "testString": { "$eq": "string" },
+          "testString": {"$eq": "string"},
         }, {
-          "testArray": { "$contains": "testArrayElement1" },
+          "testArray": {"$contains": "testArrayElement1"},
         }, {
-          "testInt": { "$eq": 123 },
+          "testInt": {"$eq": 123},
         }, {
-          "testBool": { "$eq": true },
+          "testBool": {"$eq": true},
         }, {
-          "testFloat": { "$eq": 1.4 },
+          "testFloat": {"$eq": 1.4},
         }],
+      }});
+      assertGreater(result.chunks.length, 0);
+      return;
+    },
+  );
+
+  await t.step(
+    "Perform a Search Operation, with a structured output",
+    async () => {
+      const result = await performSearch({
+        contextName: directoryContextName, structuredOutputRequest: {
+          structuredOutputSchema: z.object({lyrics: z.string()}),
+          model: "gpt-4o-mini",
+          prompt: "Produce the lyrics to a sea shanty"
+        }
       });
       assertGreater(result.chunks.length, 0);
+      assertExists(result.chunks[0].content);
+      assertExists(result.output.lyrics)
+      console.log(result.output);
       return;
     },
   );
@@ -255,20 +288,38 @@ Deno.test("Upload Directory Operations", async (t) => {
   await t.step(
     "Perform a Get Chunks Operation, without metadata",
     async () => {
-      const result = await performGetChunks(directoryContextName);
+      const result = await performGetChunks({contextName: directoryContextName});
       assertGreater(result.chunks.length, 0);
       return;
     },
   );
 
   await t.step(
+    "Perform a Get Chunks Operation, with a structured output",
+    async () => {
+      const result = await performGetChunks({
+        contextName: directoryContextName, structuredOutputRequest: {
+          structuredOutputSchema: z.object({lyrics: z.string()}),
+          model: "gpt-4o-mini",
+          prompt: "Produce the lyrics to a sea shanty"
+        }
+      });
+      assertGreater(result.chunks.length, 0);
+      assertExists(result.chunks[0].content);
+      assertExists(result.output.lyrics)
+      console.log(result.output);
+      return;
+    },
+  );
+  
+  await t.step(
     "Perform a Get Chunks operation, with a metadata filter which should return no chunks",
     async () => {
-      const noResultsData = await performGetChunks(directoryContextName, {
+      const noResultsData = await performGetChunks({contextName: directoryContextName, metadataFilters: {
         $and: [{
-          "testString": { "$eq": "notWhatWeWant" },
+          "testString": {"$eq": "notWhatWeWant"},
         }],
-      });
+      }});
       assertEquals(noResultsData.chunks.length, 0);
       return;
     },

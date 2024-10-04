@@ -1,7 +1,16 @@
 import * as path from "jsr:@std/path@1";
+import {
+  type JsonSchemaType,
+  StructuredOutputModelEnum,
+  type StructuredOutputModelType,
+  type StructuredOutputRequestType,
+} from "./types/inputs.ts";
+import type { FlexibleType } from "./types/outputs.ts";
+import { z } from "npm:zod@3.23.8";
+import { zodToJsonSchema } from "npm:zod-to-json-schema@3.23.3";
 
 /**
- * Nice colors for printing things to the console in a non brain-hurt way. 
+ * Nice colors for printing things to the console in a non brain-hurt way.
  */
 const colors = {
   reset: "\x1b[0m",
@@ -14,7 +23,7 @@ const colors = {
 };
 
 /**
- * Helper function for sleeping for a given number of milliseconds. 
+ * Helper function for sleeping for a given number of milliseconds.
  * @param ms The number of milliseconds to sleep for.
  * @returns A promise that resolves after the given number of milliseconds.
  */
@@ -23,7 +32,7 @@ export function sleep({ ms }: { ms: number }): Promise<void> {
 }
 
 /**
- * Helper function for logging to the console with a given color. 
+ * Helper function for logging to the console with a given color.
  * @param message The message to log.
  * @param color The color to log the message in.
  * @returns void
@@ -49,9 +58,8 @@ export function textWithColor(
  * Helper function for logging to the console with a given color.
  * @param message The message to log.
  * @param integerSelect The integer to select the color.
- * @param returnColor Whether to return a color object or a string. 
+ * @param returnColor Whether to return a color object or a string.
  * @returns Record<string, string> | string
- * 
  */
 export function textWithIntSelectedColor(
   message: string,
@@ -74,14 +82,12 @@ export function textWithIntSelectedColor(
   }
 }
 
-
 /**
- * Helper function for running many async functions concurrently. 
+ * Helper function for running many async functions concurrently.
  * @param n The number of times to run the function.
  * @param callable The function to run.
  * @param callableArgs The arguments to pass to the function.
- * @returns An array of resolved promises Promise<TReturn[]> 
- *
+ * @returns An array of resolved promises Promise<TReturn[]>
  */
 export const runMany = async <TArgs, TReturn>({
   n,
@@ -113,10 +119,9 @@ export const runMany = async <TArgs, TReturn>({
 };
 
 /**
- * Helper function for getting the mime type of a file based on its extension. 
+ * Helper function for getting the mime type of a file based on its extension.
  * @param filePath The path to the file.
- * @returns The mime type of the file. 
- *
+ * @returns The mime type of the file.
  */
 export const getMimeType = (filePath: string): string => {
   const ext = path.extname(filePath).toLowerCase();
@@ -136,4 +141,51 @@ export const getMimeType = (filePath: string): string => {
     // Add more as needed
   };
   return mimeTypes[ext] || "application/octet-stream";
+};
+
+/**
+ * Helper function for casting a Zod object to a JSON Schema.
+ * @param zodObject The Zod object you wish to cast
+ * @param prompt The prompt to generate the structured output
+ * @param model The model to use for the structured output generation
+ * @returns The structured output schema object to pass to the OneContext API
+ * NOTE - The zodToJsonSchema method is from https://www.npmjs.com/package/zod-to-json-schema.
+ * We are very grateful to StefanTerdell for creating this package!
+ */
+export const castToStructuredOutputSchema = ({
+  structuredOutputSchema,
+  prompt,
+  model,
+}: {
+  structuredOutputSchema: z.ZodType<unknown> | JsonSchemaType; 
+  prompt?: string;
+  model?: StructuredOutputModelType;
+}): StructuredOutputRequestType => {
+  let jsonSchema: JsonSchemaType;
+
+  if (structuredOutputSchema instanceof z.ZodType) {
+    // @ts-ignore
+    jsonSchema = zodToJsonSchema(structuredOutputSchema);
+    if (!jsonSchema) {
+      throw new Error("Failed to generate the JSON Schema from Zod object");
+    }
+  } else if (typeof structuredOutputSchema === "object" && structuredOutputSchema !== null) {
+    jsonSchema = structuredOutputSchema as JsonSchemaType;
+  } else {
+    throw new Error(
+      "Invalid schema type. Must be either a Zod schema or a JSON Schema object",
+    );
+  }
+
+  // Remove description if it exists at the top level
+  if ("description" in jsonSchema) {
+    delete jsonSchema.description;
+  }
+
+  return {
+    structuredOutputSchema: jsonSchema,
+    prompt: prompt ??
+      "Generate a structured output corresponding to the provided schema, from the provided information!",
+    model: model ?? StructuredOutputModelEnum.gpt_4o_mini,
+  };
 };

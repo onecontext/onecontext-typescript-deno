@@ -4,6 +4,11 @@ import type * as inputTypes from "./types/inputs.ts";
 import type * as outputTypes from "./types/outputs.ts";
 import * as utils from "./utils.ts";
 export * from "./utils.ts";
+export * from "./types/inputs.ts";
+export * from "./types/outputs.ts";
+
+export {utils}
+export type {inputTypes, outputTypes}
 
 /**
  * The object for interacting with the API
@@ -161,6 +166,13 @@ export class OneContextClient {
   async contextSearch(
     args: inputTypes.ContextSearchType,
   ): Promise<outputTypes.ChunkOperationResponse> {
+    if (args.structuredOutputRequest) {
+      // cast it to the correct type using the helper from the utils
+      // if passed a zod type, it will coerce it to jsonSchema
+      // if passed a jsonSchema, it will leave it as is
+      // it will also delete the top level description (see GRauch conversation)
+      args.structuredOutputRequest = utils.castToStructuredOutputSchema({...args.structuredOutputRequest});
+    }
     return await this.request("context/chunk/search", {
       method: "POST",
       body: JSON.stringify(args),
@@ -192,6 +204,14 @@ export class OneContextClient {
   async contextGet(
     args: inputTypes.ContextGetType,
   ): Promise<outputTypes.ChunkOperationResponse> {
+    
+    if (args.structuredOutputRequest) {
+      // cast it to the correct type using the helper from the utils
+      // if passed a zod type, it will coerce it to jsonSchema
+      // if passed a jsonSchema, it will leave it as is
+      // it will also delete the top level description (see GRauch conversation)
+      args.structuredOutputRequest = utils.castToStructuredOutputSchema({...args.structuredOutputRequest});
+    }
     return await this.request("context/chunk", {
       method: "POST",
       body: JSON.stringify(args),

@@ -1,4 +1,4 @@
-import ocClient from "../construct.ts";
+import {ocClient} from "../construct.ts";
 
 try {
   const out = await ocClient.contextList();

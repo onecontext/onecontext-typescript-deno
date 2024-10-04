@@ -1,6 +1,31 @@
 import { z } from "npm:zod@3.23.8";
 import type {FlexibleType} from "./outputs.ts";
 
+
+
+export const StructuredOutputModelEnum = {
+  "gpt_4o" : "gpt-4o",
+  "gpt_4o_mini" : "gpt-4o-mini",
+} as const
+export type StructuredOutputModelType = typeof StructuredOutputModelEnum[keyof typeof StructuredOutputModelEnum];
+
+export const StructuredOutputModelSchema = z.enum([
+  StructuredOutputModelEnum.gpt_4o,
+  StructuredOutputModelEnum.gpt_4o_mini,
+]);
+
+export const StructuredOutputRequest: z.ZodType<{
+  structuredOutputSchema: FlexibleType;
+  prompt?: string;
+  model?: StructuredOutputModelType; 
+}> = z.object({
+  structuredOutputSchema: z.record(z.unknown()),
+  prompt: z.string().min(1, "Prompt cannot be empty"),
+  model: StructuredOutputModelSchema.default(StructuredOutputModelEnum.gpt_4o_mini),
+});
+
+export type StructuredOutputRequestType = z.infer<typeof StructuredOutputRequest>;
+
 const MetadataFilters: z.ZodType<{
   [k: string]: FlexibleType 
 }> = z.record(z.string(), z.any());
@@ -104,9 +129,11 @@ const ContextGetSchema: z.ZodType<{
   metadataFilters?: MetadataFilters | undefined;
   limit?: number | null;
   includeEmbedding?: boolean | undefined;
+  structuredOutputRequest?: StructuredOutputRequestType;
 }> = z.object({
   contextName: z.string(),
   metadataFilters: MetadataFilters.default({}).optional(),
+  structuredOutputRequest: StructuredOutputRequest.optional(),
   limit: z.union([
     z.number().refine((val) => val > 0, {
       message: "Limit must be greater than 0",
@@ -150,7 +177,7 @@ export const ContextSearchSchema: z.ZodType<{
   fullTextWeight?: number;
   rrfK?: number;
   includeEmbedding?: boolean;
-  structuredOutputSchema?: Record<string, z.ZodAny>;
+  structuredOutputRequest?: StructuredOutputRequestType; 
 }> = z.object({
   query: z.string().refine((val) => val.trim() !== "", {
     message:
@@ -175,7 +202,7 @@ export const ContextSearchSchema: z.ZodType<{
     message: "rrfK must be greater than 0",
   }).default(60).optional(),
   includeEmbedding: z.boolean().default(false).optional(),
-  structuredOutputSchema: z.any().optional(),
+  structuredOutputRequest: z.any().optional(),
 });
 export type ContextSearchType = z.infer<typeof ContextSearchSchema>;
 

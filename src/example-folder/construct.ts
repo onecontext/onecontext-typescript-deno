@@ -1,4 +1,5 @@
-import { OneContextClient } from "./../mod.ts";
+import { OneContextClient, utils, type StructuredOutputModelType, type ChunkOperationResponse } from "./../mod.ts";
+import type { inputTypes, outputTypes } from "./../mod.ts";
 import "jsr:@std/dotenv/load";
 
 const API_KEY = Deno.env.get("ONECONTEXT_API_KEY");
@@ -19,4 +20,5 @@ const ocClient = new OneContextClient({
   baseUrl: BASE_URL || undefined,
 });
 
-export default ocClient;
+export {ocClient, utils};
+export type { inputTypes, outputTypes, StructuredOutputModelType, ChunkOperationResponse };
