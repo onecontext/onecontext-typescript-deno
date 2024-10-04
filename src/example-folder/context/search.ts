@@ -1,4 +1,4 @@
-import {ocClient, utils, type StructuredOutputModelType} from "../construct.ts";
+import {ocClient} from "../construct.ts";
 import { z } from "npm:zod@3.23.8";
 
 try {
@@ -13,7 +13,7 @@ try {
     lyrics: z.string().describe('lyrics to their absolute banger of a shanty'),
   }).describe('a schema for a sea shanty');
   
-  const model: StructuredOutputModelType = "gpt-4o-mini";
+  const model  = "gpt-4o-mini";
 
   const output = await ocClient.contextSearch(
     {
