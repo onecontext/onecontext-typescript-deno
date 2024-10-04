@@ -240,14 +240,14 @@ Deno.test("Upload Directory Operations", async (t) => {
     return;
   });
 
-  await t.step("Perform a vanilla search against context", async () => {
+  await t.step("Perform a vanilla search, no metadata filters, no structured output", async () => {
     const result = await performSearch({contextName: directoryContextName});
     assertGreater(result.chunks.length, 0);
     return;
   });
 
   await t.step(
-    "Perform a search with metadata filters against context",
+    "Perform a Search Operation, with metadata filters, not structured output",
     async () => {
       const result = await performSearch({contextName: directoryContextName,  metadataFilters: {
         $and: [{
@@ -261,14 +261,15 @@ Deno.test("Upload Directory Operations", async (t) => {
         }, {
           "testFloat": {"$eq": 1.4},
         }],
-      }});
+      },
+      });
       assertGreater(result.chunks.length, 0);
       return;
     },
   );
 
   await t.step(
-    "Perform a Search Operation, with a structured output",
+    "Perform a Search Operation, without metadata filters, with a structured output",
     async () => {
       const result = await performSearch({
         contextName: directoryContextName, structuredOutputRequest: {
@@ -280,13 +281,42 @@ Deno.test("Upload Directory Operations", async (t) => {
       assertGreater(result.chunks.length, 0);
       assertExists(result.chunks[0].content);
       assertExists(result.output.lyrics)
-      console.log(result.output);
       return;
     },
   );
 
   await t.step(
-    "Perform a Get Chunks Operation, without metadata",
+    "Perform a Search Operation, with metadata filters, with a structured output",
+    async () => {
+      const result = await performSearch({contextName: directoryContextName,  metadataFilters: {
+          $and: [{
+            "testString": {"$eq": "string"},
+          }, {
+            "testArray": {"$contains": "testArrayElement1"},
+          }, {
+            "testInt": {"$eq": 123},
+          }, {
+            "testBool": {"$eq": true},
+          }, {
+            "testFloat": {"$eq": 1.4},
+          }],
+        },
+        structuredOutputRequest: {
+          structuredOutputSchema: z.object({lyrics: z.string()}),
+          model: "gpt-4o-mini",
+          prompt: "Produce the lyrics to a sea shanty"
+        }
+      });
+      assertGreater(result.chunks.length, 0);
+      assertExists(result.chunks[0].content);
+      assertExists(result.output.lyrics)
+      return;
+    },
+  );
+
+
+  await t.step(
+    "Perform a Get Chunks Operation, without metadata filters, without structured output",
     async () => {
       const result = await performGetChunks({contextName: directoryContextName});
       assertGreater(result.chunks.length, 0);
@@ -295,7 +325,7 @@ Deno.test("Upload Directory Operations", async (t) => {
   );
 
   await t.step(
-    "Perform a Get Chunks Operation, with a structured output",
+    "Perform a Get Chunks Operation, without metadata filters, with a structured output",
     async () => {
       const result = await performGetChunks({
         contextName: directoryContextName, structuredOutputRequest: {
@@ -307,13 +337,12 @@ Deno.test("Upload Directory Operations", async (t) => {
       assertGreater(result.chunks.length, 0);
       assertExists(result.chunks[0].content);
       assertExists(result.output.lyrics)
-      console.log(result.output);
       return;
     },
   );
   
   await t.step(
-    "Perform a Get Chunks operation, with a metadata filter which should return no chunks",
+    "Perform a Get Chunks operation, with metadata filters, which should return no chunks",
     async () => {
       const noResultsData = await performGetChunks({contextName: directoryContextName, metadataFilters: {
         $and: [{
