@@ -7,9 +7,6 @@ export * from "./utils.ts";
 export * from "./types/inputs.ts";
 export * from "./types/outputs.ts";
 
-export {utils}
-export type {inputTypes, outputTypes}
-
 /**
  * The object for interacting with the API
  * @param apiKey -  The API key for authentication.

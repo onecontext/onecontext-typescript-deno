@@ -2,7 +2,7 @@ import {
   OneContextClient,
   type ChunkOperationResponse,
   type StructuredOutputRequestType,
-  type MetadataFilters, utils
+  type MetadataFilters, 
 } from "./../src/mod.ts";
 import {assertEquals, assertExists, assertGreater} from "jsr:@std/assert";
 import "jsr:@std/dotenv/load";
