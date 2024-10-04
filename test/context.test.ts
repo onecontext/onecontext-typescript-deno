@@ -86,7 +86,8 @@ async function performSearch({query, topK, contextName, metadataFilters, structu
   });
 }
 
-async function performGetChunks({contextName, metadataFilters, structuredOutputRequest}: {
+async function performGetChunks({limit, contextName, metadataFilters, structuredOutputRequest}: {
+  limit?: number,
                                   contextName: string,
                                   metadataFilters?: MetadataFilters,
                                   structuredOutputRequest?: StructuredOutputRequestType
@@ -94,7 +95,7 @@ async function performGetChunks({contextName, metadataFilters, structuredOutputR
 ): Promise<ChunkOperationResponse> {
   return await ocClient.contextGet({
     contextName,
-    limit: 5,
+    limit: limit ?? 5,
     includeEmbedding: false,
     metadataFilters,
     structuredOutputRequest,
@@ -106,7 +107,7 @@ Deno.test("Upload Files Operations", async (t) => {
   const filesContextName = "deno-test-context-files" + "-" +
     String(uuid.v1.generate());
 
-  await t.step("Create Context", async () => {
+  await t.step("Create a Context for File Upload", async () => {
     const createResult = await ocClient.createContext({
       contextName: filesContextName,
     });
@@ -114,7 +115,7 @@ Deno.test("Upload Files Operations", async (t) => {
     filesContextCreated = true;
   });
 
-  await t.step("Upload Files", async () => {
+  await t.step("Upload Files via File Upload", async () => {
     const validFiles = [];
     for await (const file of Deno.readDir(testFilesDir)) {
       if (
@@ -193,6 +194,41 @@ Deno.test("Upload Files Operations", async (t) => {
       assertEquals(noResultsData.chunks.length, 0);
     },
   );
+
+  await t.step(
+    "Perform a get Chunks Operation, without metadata filters, with a structured output",
+    async () => {
+      const result = await performGetChunks({contextName: filesContextName,
+        structuredOutputRequest: {
+        structuredOutputSchema: z.object({lyrics: z.string()}),
+          model: "gpt-4o-mini",
+          prompt: "Produce the lyrics to a sea shanty"
+      }
+    });
+      // operation generated lyrics in the structured output 
+      assertExists(result.output.lyrics)
+      // operation returned at least 1 chunk
+      assertGreater(result.chunks.length, 0)
+    },
+  );
+  
+  await t.step(
+    "Perform a get Chunks Operation, without metadata filters, with a limit of 1",
+    async () => {
+      const result = await performGetChunks({contextName: filesContextName,
+        limit: 1,
+        structuredOutputRequest: {
+          structuredOutputSchema: z.object({lyrics: z.string()}),
+          model: "gpt-4o-mini",
+          prompt: "Produce the lyrics to a sea shanty"
+        }
+      });
+      assertEquals(result.chunks.length, 1);
+    },
+  );
+
+
+
 
   await t.step("Clean up, delete context", async () => {
     if (filesContextCreated) {
