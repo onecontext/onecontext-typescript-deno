@@ -33,7 +33,8 @@ async function _consumeResponse(response: Response) {
 const testFilesDir = "./test/files/";
 
 async function waitForProcessing(contextName: string) {
-  const maxAttempts = 10;
+  // delaying to 20 retries as the image currently takes an absolute age to spin up
+  const maxAttempts = 20;
   const waitTime = 10000;
 
   for (let attempts = 0; attempts < maxAttempts; attempts++) {
