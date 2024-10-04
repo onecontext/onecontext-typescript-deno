@@ -3,9 +3,6 @@ import { basename, extname, join, relative } from "jsr:@std/path@1";
 import type * as inputTypes from "./types/inputs.ts";
 import type * as outputTypes from "./types/outputs.ts";
 import * as utils from "./utils.ts";
-export * from "./utils.ts";
-export * from "./types/inputs.ts";
-export * from "./types/outputs.ts";
 
 /**
  * The object for interacting with the API

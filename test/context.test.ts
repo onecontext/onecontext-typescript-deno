@@ -1,9 +1,8 @@
 import {
   OneContextClient,
-  type ChunkOperationResponse,
-  type StructuredOutputRequestType,
-  type MetadataFilters, 
 } from "./../src/mod.ts";
+import type {MetadataFilters, StructuredOutputRequestType} from "./../src/types/inputs.ts";
+import type { FlexibleType, ChunkOperationResponse } from "./../src/types/outputs.ts";
 import {assertEquals, assertExists, assertGreater} from "jsr:@std/assert";
 import "jsr:@std/dotenv/load";
 import * as uuid from "jsr:@std/uuid";
@@ -42,11 +41,11 @@ async function waitForProcessing(contextName: string) {
 
     const files = listResult.files;
 
-    if (files.every((file: any) => file.status === "COMPLETED")) {
+    if (files.every((file: FlexibleType) => file.status === "COMPLETED")) {
       return;
     }
 
-    const failedFiles = files.filter((file: any) => file.status === "FAILED");
+    const failedFiles = files.filter((file: FlexibleType) => file.status === "FAILED");
 
     if (failedFiles.length > 0) {
       console.error(
