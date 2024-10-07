@@ -38,7 +38,7 @@ export class OneContextClient {
   ) {
     this.apiKey = apiKey;
     this.openAiKey = openAiKey;
-    this.baseUrl = baseUrl || "https://app.onecontext.ai/api/v3/";
+    this.baseUrl = baseUrl || "https://app.onecontext.ai/api/v5/";
   }
 
   /**
