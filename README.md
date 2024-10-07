@@ -205,50 +205,43 @@ More details on the arguments for this method:
 - metadataFilters: An optional dictionary of criteria which can be used to filter results based on
   metadata. See the [OneContext Structured Query Language](#onecontext-structured-query-language) section below for the
   syntax details.
-- structuredOutputSchema: an optional [JsonSchema](https://json-schema.org/) object you can pass, if you want to co-erce the output of the Search into a defined schema. In the example below we create a [Zod](https://zod.dev/) object and then use [ZodToJsonSchema](https://www.npmjs.com/package/zod-to-json-schema) to parse it to a [JsonSchema](https://json-schema.org/) object, but you can pass a straight-up [JsonSchema](https://json-schema.org/) object if you prefer less dependencies.
+- structuredOutputRequest: an optional object you can pass if you want to co-erce the output of the Search into a defined schema. The object requires a `Schema` written in [Zod](https://zod.dev/), a `model` specification (either "gpt-4o" or "gpt-4o-mini"), and a `prompt` (a string which tells the model what to do).
 
 ```ts
-import ocClient from "./../construct.ts";
-import { zodToJsonSchema } from "npm:zod-to-json-schema";
+import {ocClient} from "../construct.ts";
 import { z } from "npm:zod@3.23.8";
-import type {JsonSchemaType} from "./../../types/inputs.ts";
 
 try {
+
   const candidate = z.object({
-    title: z.string().describe("a title of a 1970s rockband"),
-    lyrics: z.string().describe("lyrics to their absolute banger of a song"),
-  });
+    title: z.string().describe('the title of the sea shanty'),
+    lyrics: z.string().describe('lyrics to their absolute banger of a shanty'),
+  }).describe('a schema for a sea shanty');
 
-  // @ts-ignore 
-  const jsonCandidate: JsonSchemaType = zodToJsonSchema(candidate);
-
-  if (!jsonCandidate) {
-    throw new Error("Failed to generate the Json Structured Output");
-  }
+  const model  = "gpt-4o-mini";
 
   const output = await ocClient.contextSearch(
-    {
-      "query": "return chunks relating to rockbands",
-      "contextName": "counsel",
-      "metadataFilters": {
-        $and: [{ year: { $eq: 1970 } }, { label: { $contains: "columbia" } }],
-      },
-      "topK": 20,
-      "semanticWeight": 0.3,
-      "fullTextWeight": 0.7,
-      "rrfK": 50,
-      "includeEmbedding": false,
-      "structuredOutputSchema": jsonCandidate,
-    },
+          {
+            "query": "return chunks relating to rockbands",
+            "contextName": "counsel",
+            "metadataFilters": {
+              $and: [{ year: { $eq: 1970 } }, { label: { $contains: "columbia" } }],
+            },
+            "topK": 20,
+            "semanticWeight": 0.3,
+            "fullTextWeight": 0.7,
+            "rrfK": 50,
+            "includeEmbedding": false,
+            "structuredOutputRequest": {structuredOutputSchema: candidate, model: model, prompt: "Produce this sea shanty"},
+          },
   );
 
-  console.log("Chunks: ", output.chunks)
+  // console.log("Chunks: ", output.chunks)
   console.log("Output: ", output.output)
 
 } catch (error) {
   console.error("Error searching context.", error);
 }
-
 ```
 #### Retrieve chunks from your context (without semantic searching)
 Use this method to quickly retrieve chunks from your context which correspond to a set of filters.
@@ -260,6 +253,7 @@ More details on the arguments for this method:
 - metadataFilters: A dictionary of criteria used to filter results based on
   metadata. See the [OneContext Structured Query Language](#onecontext-structured-query-language) section below for the
   syntax details.
+- structuredOutputRequest: an optional object you can pass if you want to co-erce the output of the Search into a defined schema. The object requires a `Schema` written in [Zod](https://zod.dev/), a `model` specification (either "gpt-4o" or "gpt-4o-mini"), and a `prompt` (a string which tells the model what to do).
 
 ```ts
 import ocClient from './construct.js';
