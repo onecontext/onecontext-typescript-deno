@@ -213,14 +213,14 @@ export type ContextSearchType = z.infer<typeof ContextSearchSchema>;
 export const UploadFilesSchema: z.ZodType<{
   files: FileType[];
   contextName: string;
-  metadataJson?: MetadataFilters;
+  metadataJson?: MetadataFilters[];
   maxChunkSize?: number;
 }> = z.object({
   files: z.array(FileSchema),
   contextName: z.string().refine((val) => val.trim() !== "", {
     message: "Context name cannot be empty",
   }),
-  metadataJson: MetadataFilters.optional(),
+  metadataJson: z.array(MetadataFilters).optional(),
   maxChunkSize: z.number().refine((val) => val > 0, {
     message: "Max chunk size must be greater than 0",
   }).default(300).optional(),

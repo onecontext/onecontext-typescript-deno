@@ -132,13 +132,13 @@ Deno.test("Upload Files Operations", async (t) => {
     const uploadResult = await ocClient.uploadFiles({
       contextName: filesContextName,
       files: filePaths,
-      metadataJson: {
+      metadataJson: Array.from({length: filePaths.length}, () => ({
         "testString": "string",
         "testArray": ["testArrayElement1", "testArrayElement2"],
         "testInt": 123,
         "testBool": true,
         "testFloat": 1.4,
-      },
+      })),
       maxChunkSize: 200,
     });
 

@@ -21,6 +21,7 @@ export class OneContextClient {
   private readonly apiKey: string;
   private baseUrl: string;
   private readonly openAiKey?: string;
+  private readonly bypass?: string;
 
   /**
    * Creates an instance of OneContextClient.
@@ -28,17 +29,20 @@ export class OneContextClient {
    * @param apiKey - The API key for authentication.
    * @param openAiKey - Optional OpenAI API key.
    * @param baseUrl - The base URL for the OneContext API.
+   * @param bypass - Optional bypass key.
    */
   constructor(
-    { apiKey, openAiKey, baseUrl }: {
+    { apiKey, openAiKey, baseUrl, bypass }: {
       apiKey: string;
       openAiKey?: string;
       baseUrl?: string;
+      bypass?: string;
     },
   ) {
     this.apiKey = apiKey;
     this.openAiKey = openAiKey;
     this.baseUrl = baseUrl || "https://app.onecontext.ai/api/v5/";
+    this.bypass = bypass || undefined
   }
 
   /**
@@ -58,6 +62,7 @@ export class OneContextClient {
         ...options.headers,
         "API-KEY": this.apiKey,
         "OPENAI-API-KEY": this.openAiKey || "",
+        "x-vercel-protection-bypass": this.bypass || "",
       },
     });
 
@@ -324,7 +329,8 @@ export class OneContextClient {
       files,
       contextName: args.contextName,
       maxChunkSize: args.maxChunkSize,
-      metadataJson: args.metadataJson,
+      // metadataJson should be a list as long as the files, with the metadataJson for each file in the same index as the file in the files list
+      metadataJson: args.metadataJson ? Array(files.length).fill(args.metadataJson) : undefined 
     });
   }
 
@@ -368,7 +374,8 @@ export class OneContextClient {
       const { presignedUrl, fileId, gcsUri } = presignedUrlsResponse[index];
       // only one metadataJson for all files in this upload batch
       // i.e. the type is a singular object, not an array of objects (for now)
-      const metadataJson = args.metadataJson;
+      const metadataJson = args.metadataJson ? args.metadataJson[index] : {};
+      
       let fileContent: Uint8Array | ReadableStream;
       let fileName: string;
       let fileType: string;
@@ -377,8 +384,16 @@ export class OneContextClient {
       fileContent = await Deno.readFile(file.path);
       fileType = utils.getMimeType(file.path);
 
+
+      const client = Deno.createHttpClient({
+        http2: false,
+        http1: true,
+      });
+      
       try {
+        
         const uploadResponse = await fetch(presignedUrl, {
+          client: client,
           method: "PUT",
           body: fileContent,
           headers: { "Content-Type": fileType },
@@ -392,6 +407,7 @@ export class OneContextClient {
         } else {
           await uploadResponse.body?.cancel();
         }
+        
 
         return {
           fileId,
@@ -403,6 +419,8 @@ export class OneContextClient {
       } catch (error) {
         console.error(`Error uploading file ${fileName}:`, error);
         return null;
+      } finally {
+        client.close();
       }
     });
 
