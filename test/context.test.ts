@@ -11,6 +11,7 @@ import {z} from "npm:zod@3.23.8";
 const API_KEY = Deno.env.get("ONECONTEXT_API_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const BASE_URL = Deno.env.get("BASE_URL");
+const BYPASS = Deno.env.get("BYPASS");
 
 if (!API_KEY || !OPENAI_API_KEY) {
   console.error(
@@ -23,6 +24,7 @@ const ocClient = new OneContextClient({
   apiKey: API_KEY,
   openAiKey: OPENAI_API_KEY,
   baseUrl: BASE_URL,
+  bypass: BYPASS, 
 });
 
 async function _consumeResponse(response: Response) {
