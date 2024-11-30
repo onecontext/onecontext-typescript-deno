@@ -4,15 +4,18 @@ import type {FlexibleType} from "./outputs.ts";
 export const StructuredOutputModelEnum: {
   readonly gpt_4o: "gpt-4o";
   readonly gpt_4o_mini: "gpt-4o-mini";
+  readonly claude_35: "claude-35";
 } = {
   "gpt_4o" : "gpt-4o",
   "gpt_4o_mini" : "gpt-4o-mini",
+  "claude_35" : "claude-35",
 } as const
 export type StructuredOutputModelType = typeof StructuredOutputModelEnum[keyof typeof StructuredOutputModelEnum];
 
 export const StructuredOutputModelSchema: z.ZodEnum<[StructuredOutputModelType, ...StructuredOutputModelType[]]> = z.enum([
   StructuredOutputModelEnum.gpt_4o,
   StructuredOutputModelEnum.gpt_4o_mini,
+  StructuredOutputModelEnum.claude_35
 ]);
 
 export const StructuredOutputRequest: z.ZodType<{

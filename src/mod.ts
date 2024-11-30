@@ -21,6 +21,7 @@ export class OneContextClient {
   private readonly apiKey: string;
   private baseUrl: string;
   private readonly openAiKey?: string;
+  private readonly anthropicKey?: string;
   private readonly bypass?: string;
 
   /**
@@ -28,19 +29,22 @@ export class OneContextClient {
    * @private
    * @param apiKey - The API key for authentication.
    * @param openAiKey - Optional OpenAI API key.
+   * @param anthropicKey - Optional Anthropic API key.
    * @param baseUrl - The base URL for the OneContext API.
    * @param bypass - Optional bypass key.
    */
   constructor(
-    { apiKey, openAiKey, baseUrl, bypass }: {
+    { apiKey, openAiKey, anthropicKey, baseUrl, bypass }: {
       apiKey: string;
       openAiKey?: string;
+      anthropicKey?: string;
       baseUrl?: string;
       bypass?: string;
     },
   ) {
     this.apiKey = apiKey;
     this.openAiKey = openAiKey;
+    this.anthropicKey = anthropicKey;
     this.baseUrl = baseUrl || "https://app.onecontext.ai/api/v5/";
     this.bypass = bypass || undefined
   }
@@ -62,6 +66,7 @@ export class OneContextClient {
         ...options.headers,
         "API-KEY": this.apiKey,
         "OPENAI-API-KEY": this.openAiKey || "",
+        "ANTHROPIC-API-KEY": this.anthropicKey || "",
         "x-vercel-protection-bypass": this.bypass || "",
       },
     });

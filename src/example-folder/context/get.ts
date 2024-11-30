@@ -10,13 +10,13 @@ try {
   
   const out = await ocClient.contextGet(
     {
-      "contextName": "lots",
+      "contextName": "newtest",
       // "metadataFilters": {
       //   $and: [{ age: { $eq: 30 } }, { name: { $contains: "ross" } }],
       // },
-      "limit": 5,
+      "limit": 10,
       "includeEmbedding": false,
-      "structuredOutputRequest": {structuredOutputSchema: candidate, model: "gpt-4o-mini"},
+      // "structuredOutputRequest": {structuredOutputSchema: candidate, model: "gpt-4o-mini"},
     },
   );
   console.log(out)
