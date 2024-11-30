@@ -10,19 +10,19 @@ try {
   
   const candidate = z.object({
     title: z.string().describe('the title of the sea shanty'),
-    lyrics: z.string().describe('lyrics to their absolute banger of a shanty'),
+    lyrics: z.string().describe('some short lyrics to their absolute banger of a shanty. just give me a few lines.'),
   }).describe('a schema for a sea shanty');
   
   const model  = "gpt-4o-mini";
 
   const output = await ocClient.contextSearch(
     {
-      "query": "return chunks relating to rockbands",
-      "contextName": "counsel",
+      "query": "tell me about rockbands",
+      "contextName": "demo",
       // "metadataFilters": {
       //   $and: [{ year: { $eq: 1970 } }, { label: { $contains: "columbia" } }],
       // },
-      "topK": 20,
+      "topK": 10,
       "semanticWeight": 0.3,
       "fullTextWeight": 0.7,
       "rrfK": 50,
